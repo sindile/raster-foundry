@@ -26,7 +26,6 @@ trait SceneQueryParameterDirective extends QueryParametersCommon {
       'maxSunElevation.as[Float].?,
       'minSunElevation.as[Float].?,
       'bbox.as[String].*,
-      'point.as[String].?,
       'project.as[UUID].?,
       'ingested.as[Boolean].?,
       'ingestStatus.as[String].*,
@@ -38,8 +37,7 @@ trait SceneQueryParameterDirective extends QueryParametersCommon {
     ('exactCount.as[Boolean].?)
   ).as(SceneSearchModeQueryParams.apply _)
 
-  val sceneQueryParameters = (orgQueryParams &
-    userQueryParameters &
+  val sceneQueryParameters = (userQueryParameters &
     timestampQueryParameters &
     sceneSpecificQueryParams &
     ownershipTypeQueryParameters &

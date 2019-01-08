@@ -6,7 +6,7 @@ import java.util.UUID
 import io.circe._
 import io.circe.generic.semiauto._
 import geotrellis.proj4._
-import geotrellis.vector.{Extent, Point, Polygon, Projected}
+import geotrellis.vector.{Extent, Polygon, Projected}
 
 /** Case class representing all /thumbnail query parameters */
 final case class ThumbnailQueryParameters(sceneId: Option[UUID] = None)
@@ -49,7 +49,6 @@ final case class SceneQueryParameters(
     maxSunElevation: Option[Float] = None,
     minSunElevation: Option[Float] = None,
     bbox: Iterable[String] = Seq.empty[String],
-    point: Option[String] = None,
     project: Option[UUID] = None,
     ingested: Option[Boolean] = None,
     ingestStatus: Iterable[String] = Seq.empty[String],
@@ -58,19 +57,6 @@ final case class SceneQueryParameters(
 ) {
   val bboxPolygon: Option[Seq[Projected[Polygon]]] =
     BboxUtil.toBboxPolygon(bbox)
-
-  val pointGeom: Option[Projected[Point]] = try {
-    point.map { s =>
-      val Array(x, y) = s.split(",")
-      Projected(Point(x.toDouble, y.toDouble), 4326)
-        .reproject(LatLng, WebMercator)(3857)
-    }
-  } catch {
-    case e: Exception =>
-      throw new IllegalArgumentException(
-        "Both coordinate parameters of point (x, y) must be specified"
-      ).initCause(e)
-  }
 }
 
 object SceneQueryParameters {
@@ -95,7 +81,6 @@ object SceneSearchModeQueryParams {
 
 /** Combined all query parameters */
 final case class CombinedSceneQueryParams(
-    orgParams: OrgQueryParameters = OrgQueryParameters(),
     userParams: UserQueryParameters = UserQueryParameters(),
     timestampParams: TimestampQueryParameters = TimestampQueryParameters(),
     sceneParams: SceneQueryParameters = SceneQueryParameters(),

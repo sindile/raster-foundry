@@ -95,25 +95,25 @@ trait SceneRoutes
           } ~
           pathPrefix("permissions") {
             pathEndOrSingleSlash {
-              put {
-                traceName("replace-scene-permissions") {
-                  replaceScenePermissions(sceneId)
-                }
-              }
-            } ~
-              post {
-                traceName("add-scene-permission") {
-                  addScenePermission(sceneId)
-                }
-              } ~
               get {
                 traceName("list-scene-permissions") {
                   listScenePermissions(sceneId)
                 }
               } ~
-              delete {
-                deleteScenePermissions(sceneId)
-              }
+                put {
+                  traceName("replace-scene-permissions") {
+                    replaceScenePermissions(sceneId)
+                  }
+                } ~
+                post {
+                  traceName("add-scene-permission") {
+                    addScenePermission(sceneId)
+                  }
+                } ~
+                delete {
+                  deleteScenePermissions(sceneId)
+                }
+            }
           } ~
           pathPrefix("actions") {
             pathEndOrSingleSlash {
