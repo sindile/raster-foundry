@@ -37,6 +37,11 @@ then
         docker-compose \
             run --rm --no-deps api-server update
 
+        echo "Checking declared dependencies against libraries used"
+        docker-compose \
+            run --rm --no-deps api-server \
+            './sbt ";unusedCompileDependenciesTest;undeclaredCompileDependenciesTest'
+
         echo "Linting Scala source code"
         docker-compose \
             run --rm --no-deps api-server scalafmtCheck
