@@ -19,6 +19,7 @@ object Dependencies {
   val caffeine = "com.github.ben-manes.caffeine" % "caffeine" % Version.caffeine
   val catsCore = "org.typelevel" %% "cats-core" % Version.cats
   val catsEffect = "org.typelevel" %% "cats-effect" % Version.catsEffect
+  val catsKernel = "org.typelevel" %% "cats-kernel" % Version.cats
   val catsMeow = "com.olegpy" %% "meow-mtl" % Version.catsMeow
   val chill = "com.twitter" %% "chill" % Version.chill
   val circeCore = "io.circe" %% "circe-core" % Version.circe
@@ -41,6 +42,7 @@ object Dependencies {
   val findbugAnnotations = "com.google.code.findbugs" % "annotations" % Version.findbugAnnotations % "compile"
   val geotools = "org.geotools" % "gt-shapefile" % Version.geotools
   val geotrellisGeotools = "org.locationtech.geotrellis" %% "geotrellis-geotools" % Version.geotrellis
+  val geotrellisProj4 = "org.locationtech.geotrellis" %% "geotrellis-proj4" % Version.geotrellis
   val geotrellisRaster = "org.locationtech.geotrellis" %% "geotrellis-raster" % Version.geotrellis
   val geotrellisS3 = "org.locationtech.geotrellis" %% "geotrellis-s3" % Version.geotrellis
   val geotrellisServer = "com.azavea" %% "geotrellis-server-core" % Version.geotrellisServer
@@ -59,6 +61,7 @@ object Dependencies {
   val jts = "com.vividsolutions" % "jts" % Version.jts
   val mamlJvm = "com.azavea" %% "maml-jvm" % Version.maml
   val mamlSpark = "com.azavea" %% "maml-spark" % Version.maml
+  val monocle = "com.github.julien-truffaut" %% "monocle-core" % Version.monocle
   val nimbusJose = "com.guizmaii" %% "scala-nimbus-jose-jwt" % Version.nimbusJose
   val postgres = "org.postgresql" % "postgresql" % Version.postgres
   val rollbar = "com.rollbar" % "rollbar-java" % Version.rollbar
@@ -70,7 +73,10 @@ object Dependencies {
   val scalajHttp = "org.scalaj" %% "scalaj-http" % Version.scalajHttp
   val scalatest = "org.scalatest" %% "scalatest" % Version.scalaTest % "test"
   val scopt = "com.github.scopt" %% "scopt" % Version.scopt
+  val shapeless = "com.chuusai" %% "shapeless" % Version.shapeless
   val slickMigrationAPI = "io.github.nafg" %% "slick-migration-api" % Version.slickMigrationAPI
   val spark = "org.apache.spark" %% "spark-core" % Version.spark % "provided"
   val sparkCore = "org.apache.spark" %% "spark-core" % Version.spark
+  val spire = "org.spire-math" %% "spire" % Version.spire
+  val spray = "io.spray" %% "spray-json" % Version.spray
 }

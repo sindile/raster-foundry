@@ -159,27 +159,16 @@ lazy val migrationsDependencies =
 
 lazy val testDependencies = List(
   Dependencies.scalatest,
-  Dependencies.akkatestkit
+  Dependencies.akkatestkit % "test"
 )
 
-lazy val apiDependencies = dbDependencies ++ migrationsDependencies ++
-  testDependencies ++ Seq(
-  Dependencies.akka,
-  Dependencies.akkahttp,
+lazy val apiDependencies = testDependencies ++ metricsDependencies ++ Seq(
   Dependencies.akkaHttpCors,
   Dependencies.akkaCirceJson,
-  Dependencies.akkastream,
-  Dependencies.akkaSlf4j,
-  Dependencies.akkaHttpExtensions,
   Dependencies.awsStsSdk,
   Dependencies.betterFiles,
-  Dependencies.commonsIO,
-  Dependencies.geotrellisS3,
   Dependencies.geotrellisShapefile,
   Dependencies.betterFiles,
-  Dependencies.caffeine,
-  Dependencies.scaffeine,
-  Dependencies.findbugAnnotations,
   Dependencies.dropbox
 )
 
@@ -211,14 +200,9 @@ lazy val common = Project("common", file("common"))
   .settings(apiSettings: _*)
   .settings({
     libraryDependencies ++= testDependencies ++ Seq(
-      Dependencies.commonsIO,
-      Dependencies.caffeine,
-      Dependencies.scaffeine,
+      Dependencies.akkahttp,
       Dependencies.elasticacheClient,
-      Dependencies.geotrellisS3,
-      Dependencies.findbugAnnotations,
       Dependencies.chill,
-      Dependencies.catsCore,
       Dependencies.awsBatchSdk,
       Dependencies.rollbar,
       Dependencies.apacheCommonsEmail
@@ -266,7 +250,7 @@ lazy val datamodel = Project("datamodel", file("datamodel"))
       Dependencies.scalaCheck,
       Dependencies.circeTest,
       Dependencies.jts,
-      "com.lonelyplanet" %% "akka-http-extensions" % "0.4.15" % "test"
+      Dependencies.akkaHttpExtensions % "test"
     )
   })
 
@@ -323,17 +307,25 @@ lazy val tool = Project("tool", file("tool"))
   .settings(commonSettings: _*)
   .settings(resolvers += Resolver.bintrayRepo("azavea", "maven"))
   .settings({
-    libraryDependencies ++= loggingDependencies ++ Seq(
-      Dependencies.sparkCore,
-      Dependencies.geotrellisSpark,
-      Dependencies.geotrellisRaster,
+    libraryDependencies ++= Seq(
+      Dependencies.geotrellisRasterTestkit % "test",
       Dependencies.scalatest,
+      Dependencies.scalaLogging,
       Dependencies.circeCore,
       Dependencies.circeGeneric,
       Dependencies.circeParser,
       Dependencies.circeOptics,
+      Dependencies.monocle,
+      // Manually specified because they're getting included from something, I think maml
+      "org.locationtech.geotrellis" %% "geotrellis-raster" % "3.0.0-SNAPSHOT",
+      "org.locationtech.geotrellis" %% "geotrellis-vector" % "3.0.0-SNAPSHOT",
       Dependencies.scalaCheck,
-      Dependencies.mamlJvm
+      Dependencies.spire,
+      Dependencies.mamlJvm,
+      Dependencies.spray,
+      Dependencies.catsCore,
+      Dependencies.catsKernel,
+      Dependencies.shapeless
     )
   })
 
@@ -364,12 +356,13 @@ lazy val akkautil = Project("akkautil", file("akkautil"))
 lazy val bridge = Project("bridge", file("bridge"))
   .settings(commonSettings: _*)
   .settings({
-    libraryDependencies ++= loggingDependencies ++ Seq(
+    libraryDependencies ++= Seq(
+      Dependencies.catsCore,
       Dependencies.circeCore,
-      Dependencies.circeGeneric,
       Dependencies.circeParser,
+      Dependencies.geotrellisProj4,
       Dependencies.geotrellisVector,
-      Dependencies.scalaLogging
+      Dependencies.spray
     )
   })
 
