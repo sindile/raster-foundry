@@ -17,8 +17,6 @@ import org.http4s.server._
 import org.http4s.util.CaseInsensitiveString
 import java.net.URL
 import java.util.UUID
-
-import com.rasterfoundry.backsplash.MetricsRegistrator
 import com.typesafe.scalalogging.LazyLogging
 import doobie.util.transactor.Transactor
 import scalacache.memoization._
@@ -27,12 +25,9 @@ import scalacache.Flags
 
 import scala.concurrent.duration._
 
-class Authenticators(val xa: Transactor[IO], mtr: MetricsRegistrator)
+class Authenticators(val xa: Transactor[IO])
     extends LazyLogging
     with RFHttp4s.Authenticators {
-
-  val verifyJWTTimer = mtr.newTimer(classOf[Authenticators], "verify-jwt")
-  val tokenAuthTimer = mtr.newTimer(classOf[Authenticators], "token-auth")
 
   val tokensAuthenticator = Kleisli[OptionT[IO, ?], Request[IO], User](
     {
