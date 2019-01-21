@@ -16,8 +16,9 @@ eventType = Union[NewLandsat8Event, NewSentinel2Event]
 
 def handler(event: eventType, context: Dict[str, Any]):
     api_host = os.getenv('RF_API_HOST', 'app.rasterfoundry.com')
-    refresh_token = os.getenv('RF_REFRESH_TOKEN')
-    api_token = os.getenv('RF_API_TOKEN')
+    refresh_token = os.getenv('RF_REFRESH_TOKEN', '')
+    api_token = os.getenv('RF_API_TOKEN', '')
+    logger.info('Got environment variables')
     logger.info('Connecting to Raster Foundry API')
     rf_api = API(
         refresh_token=refresh_token,
@@ -25,9 +26,12 @@ def handler(event: eventType, context: Dict[str, Any]):
         host=api_host,
         scheme='https' if ('localhost' not in api_host) else 'http')
     logger.info('Creating scene from parsed SNS event')
-    scene_to_post = create_l8.create_scene(event) if isinstance(
-        event, NewLandsat8Event) else create_s2.create_scene(event)
+    if isinstance(event, NewLandsat8Event):
+        logger.info('Processing a Landsat 8 Event')
+        scene_to_post = create_l8.create_scene(event)
+    else:
+        logger.info('Processing a Sentinel-2 Event')
+        scene_to_post = create_s2.create_scene(event)
     logger.info('Sending scene to the Raster Foundry API at %s', api_host)
     result = rf_api.client.Imagery.post_scenes(scene=scene_to_post).result()
     logger.info('Scene %s created successfully', event.scene_name)
-    return result

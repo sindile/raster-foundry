@@ -5,6 +5,7 @@ from rflambda.sentinel2.new_sentinel2_event import NewSentinel2Event
 from rflambda.model import handler
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def handle(event: Dict[str, Any], context: Dict[str, Any]):
