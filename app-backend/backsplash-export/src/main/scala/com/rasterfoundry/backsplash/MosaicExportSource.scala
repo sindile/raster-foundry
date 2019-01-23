@@ -1,7 +1,6 @@
 package com.rasterfoundry.backsplash.export
 
 import TileReification._
-
 import geotrellis.server._
 import geotrellis.raster._
 import geotrellis.vector.Polygon
@@ -10,9 +9,10 @@ import _root_.io.circe._
 import _root_.io.circe.generic.semiauto._
 import cats.effect._
 import cats.data.Validated._
-
 import java.util.UUID
 import java.net.URI
+
+import com.typesafe.scalalogging.LazyLogging
 
 // layers includes tuples of the URL/URI of a cog + the list of bands to use
 case class MosaicExportSource(
@@ -26,7 +26,7 @@ case class MosaicExportSource(
     }
 }
 
-object MosaicExportSource {
+object MosaicExportSource extends LazyLogging {
   implicit val encoder = deriveEncoder[MosaicExportSource]
   implicit val decoder = deriveDecoder[MosaicExportSource]
 
@@ -36,15 +36,19 @@ object MosaicExportSource {
         zoom: Int
     )(implicit cs: ContextShift[IO]): Iterator[((Int, Int), MultibandTile)] = {
       val extent = exportExtent(self)
-      val (minLat, minLng) = (extent.ymin, extent.xmin)
-      val (maxLat, maxLng) = (extent.ymax, extent.xmax)
-      val (minTileX, minTileY) = getTileXY(minLat, minLng, zoom)
-      val (maxTileX, maxTileY) = getTileXY(maxLat, maxLng, zoom)
+      println(s"Exporting Extent: ${extent}")
+      val (minTileX, minTileY) = getTileXY(extent.ymin, extent.xmin, zoom)
+      val (maxTileX, maxTileY) = getTileXY(extent.ymax, extent.xmax, zoom)
+
+      println(s"ys: ${maxTileY} to ${minTileY}")
+      println(s"xs: ${minTileX} to ${maxTileX}")
 
       val tileList = for {
         xs <- minTileX to maxTileX
-        ys <- minTileY to maxTileY
+        ys <- maxTileY to minTileY
       } yield (xs, ys)
+
+      println(s"${tileList.length} tiles to export from source")
 
       new Iterator[((Int, Int), MultibandTile)] {
         var allTiles = tileList
@@ -69,14 +73,7 @@ object MosaicExportSource {
     def exportZoom(self: MosaicExportSource): Int =
       self.zoom
 
-    def exportCellType(self: MosaicExportSource) =
-      self.rsLayers
-        .map {
-          case (rs, _) => rs.cellType
-        }
-        .foldLeft[CellType](BitCellType) {
-          case (acc, next) => ???
-        }
+    def exportCellType(self: MosaicExportSource) = DoubleConstantNoDataCellType
 
     def exportExtent(self: MosaicExportSource) = self.area.envelope
 

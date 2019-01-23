@@ -6,7 +6,7 @@ import geotrellis.raster.io.geotiff.compression._
 import geotrellis.spark.SpatialKey
 import geotrellis.spark.tiling._
 import geotrellis.proj4._
-import geotrellis.vector.{Extent, Polygon, Point}
+import geotrellis.vector.{Extent, Point, Polygon}
 import geotrellis.vector.io._
 import geotrellis.contrib.vlm._
 import geotrellis.contrib.vlm.geotiff._
@@ -21,7 +21,9 @@ import scala.util.Try
 import java.net.{URI, URLDecoder}
 import java.nio.charset.StandardCharsets
 
-package object export {
+import com.typesafe.scalalogging.LazyLogging
+
+package object export extends LazyLogging {
 
   implicit val polygonEncoder: Encoder[Polygon] =
     new Encoder[Polygon] {
@@ -93,12 +95,15 @@ package object export {
 
   def exportSegmentLayout(extent: Extent, zoom: Int): GeoTiffSegmentLayout = {
     val (minTileCol, minTileRow) =
-      getTileXY(extent.ymin, extent.xmin, zoom)
+      getTileXY(extent.ymin, extent.xmax, zoom)
     val (maxTileCol, maxTileRow) =
-      getTileXY(extent.ymax, extent.xmax, zoom)
+      getTileXY(extent.ymax, extent.xmin, zoom)
 
-    val tileCols = maxTileCol - minTileCol
-    val tileRows = maxTileRow - minTileRow
+    println(s"Minimum Tile: ${minTileCol}, ${minTileRow}")
+    println(s"Maximum Tile: ${maxTileCol}, ${maxTileRow}")
+
+    val tileCols = minTileCol - maxTileCol
+    val tileRows = minTileRow - maxTileRow
     val tileLayout = TileLayout(tileCols, tileRows, 256, 256)
     GeoTiffSegmentLayout(
       tileCols,

@@ -38,22 +38,19 @@ object TileReification extends LazyLogging {
         val ld = tmsLevels(z)
         val extent = ld.mapTransform.keyToExtent(x, y)
         val subTilesIO = self.traverse {
-          case (uri, bands) =>
+          case (rs, bands) =>
             IO {
-              getRasterSource(uri.toString)
-                .reproject(WebMercator, NearestNeighbor)
+              rs.reproject(WebMercator, NearestNeighbor)
                 .tileToLayout(ld, NearestNeighbor)
                 .read(SpatialKey(x, y), bands)
             } flatMap {
               case Some(t) => IO.pure(Raster(t, extent))
-              case _ =>
-                IO.raiseError(new Exception(
-                  s"No Tile availble for the following SpatialKey: ${x}, ${y}"))
+              case _       => IO.pure(Raster(MultibandTile(invisiTile), extent))
             }
         }
         val exportTile = subTilesIO.map { subtiles =>
           subtiles.reduceOption(_ merge _) match {
-            case Some(tile) => Raster(tile, extent)
+            case Some(tile) => tile
             case _          => Raster(MultibandTile(invisiTile), extent)
           }
         }
