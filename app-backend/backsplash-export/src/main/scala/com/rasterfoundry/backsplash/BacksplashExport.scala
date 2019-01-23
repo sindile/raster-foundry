@@ -6,6 +6,7 @@ import cats.implicits._
 import com.monovore.decline._
 import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
+import geotrellis.raster.io.geotiff.writer.GeoTiffWriter
 import _root_.io.circe._
 import _root_.io.circe.syntax._
 import _root_.io.circe.parser._
@@ -62,10 +63,10 @@ object BacksplashExport
 
               exportDefinition match {
                 case Right(exportDefinition) =>
-                  println("RIGHT", exportDefinition)
-                  exportDefinition.toGeoTiff(compression)
+                  val geotiff = exportDefinition.toGeoTiff(compression)
+                  GeoTiffWriter.write(geotiff, "outputlocation")
                 case Left(err) =>
-                  println("LEFT", err)
+                  throw err
               }
             }
         }

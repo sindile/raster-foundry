@@ -1,5 +1,7 @@
 package com.rasterfoundry.backsplash.export
 
+import geotrellis.raster._
+import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
 import cats._
 import cats.implicits._
@@ -15,7 +17,8 @@ case class ExportDefinition[SourceDefinition: Exportable: Decoder](
     source: SourceDefinition,
     output: OutputDefinition
 ) {
-  def toGeoTiff(compression: Compression) = source.toGeoTiff(compression)
+  def toGeoTiff(compression: Compression): GeoTiff[MultibandTile] =
+    source.toGeoTiff(compression)
 }
 
 object ExportDefinition {

@@ -8,6 +8,9 @@ import geotrellis.spark.tiling._
 import geotrellis.proj4._
 import geotrellis.vector.{Extent, Polygon, Point}
 import geotrellis.vector.io._
+import geotrellis.contrib.vlm._
+import geotrellis.contrib.vlm.geotiff._
+import geotrellis.contrib.vlm.gdal._
 import cats._
 import cats.implicits._
 import _root_.io.circe._
@@ -15,7 +18,8 @@ import _root_.io.circe.parser._
 import _root_.io.circe.syntax._
 
 import scala.util.Try
-import java.net.URI
+import java.net.{URI, URLDecoder}
+import java.nio.charset.StandardCharsets
 
 package object export {
 
@@ -104,6 +108,17 @@ package object export {
       Tiled,
       PixelInterleave
     )
+  }
+
+  def getRasterSource(uri: String): RasterSource = {
+    val enableGDAL = false // for now
+    if (enableGDAL) {
+      GDALRasterSource(
+        URLDecoder.decode(uri, StandardCharsets.UTF_8.toString()))
+    } else {
+      new GeoTiffRasterSource(
+        URLDecoder.decode(uri, StandardCharsets.UTF_8.toString()))
+    }
   }
 
 }

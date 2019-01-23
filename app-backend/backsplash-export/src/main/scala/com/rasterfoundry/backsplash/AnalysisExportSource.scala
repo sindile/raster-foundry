@@ -6,6 +6,7 @@ import geotrellis.server._
 import geotrellis.raster._
 import geotrellis.vector.Polygon
 import geotrellis.raster.io.geotiff._
+import geotrellis.contrib.vlm.RasterSource
 import geotrellis.proj4._
 import cats._
 import cats.implicits._
@@ -19,7 +20,14 @@ case class AnalysisExportSource(
     area: Polygon,
     ast: Expression,
     params: Map[String, List[(URI, Int)]]
-)
+) {
+  lazy val rsParams =
+    params.mapValues { lst =>
+      lst.map {
+        case (uri, band) => (getRasterSource(uri.toString), band)
+      }
+    }
+}
 
 object AnalysisExportSource {
   implicit val encoder = deriveEncoder[AnalysisExportSource]
@@ -33,8 +41,10 @@ object AnalysisExportSource {
         ???
       }
 
-      def cellType(self: AnalysisExportSource): CellType =
+      def exportCellType(self: AnalysisExportSource): CellType =
         DoubleConstantNoDataCellType
+
+      def exportExtent(self: AnalysisExportSource) = self.area.envelope
 
       def segmentLayout(self: AnalysisExportSource) =
         exportSegmentLayout(self.area.envelope, self.zoom)

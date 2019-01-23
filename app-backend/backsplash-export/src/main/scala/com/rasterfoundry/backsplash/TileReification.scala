@@ -6,8 +6,6 @@ import geotrellis.proj4._
 import geotrellis.spark.SpatialKey
 import geotrellis.spark.tiling._
 import geotrellis.contrib.vlm._
-import geotrellis.contrib.vlm.geotiff._
-import geotrellis.contrib.vlm.gdal._
 import geotrellis.server._
 import com.azavea.maml.ast._
 import cats._
@@ -34,20 +32,7 @@ class TileReification(crs: CRS) extends LazyLogging {
                                                          256,
                                                          invisiCellType)
 
-  private def getRasterSource(uri: String): RasterSource = {
-    val enableGDAL = false // for now
-    if (enableGDAL) {
-      logger.debug(s"Using GDAL Raster Source: ${uri}")
-      GDALRasterSource(
-        URLDecoder.decode(uri, StandardCharsets.UTF_8.toString()))
-    } else {
-      logger.debug(s"Using GeoTiffRasterSource: ${uri}")
-      new GeoTiffRasterSource(
-        URLDecoder.decode(uri, StandardCharsets.UTF_8.toString()))
-    }
-  }
-
-  type ExportMosaic = List[(URI, List[Int])]
+  type ExportMosaic = List[(RasterSource, List[Int])]
   val mosaicExportTmsReification = new TmsReification[ExportMosaic] {
     def kind(self: ExportMosaic): MamlKind = MamlKind.Image
 
@@ -81,7 +66,7 @@ class TileReification(crs: CRS) extends LazyLogging {
     }
   }
 
-  type ExportAnalysis = List[(URI, Int)]
+  type ExportAnalysis = List[(RasterSource, Int)]
   val analysisExportTmsReification = new TmsReification[ExportAnalysis] {
     def kind(self: ExportAnalysis): MamlKind = MamlKind.Image
 
