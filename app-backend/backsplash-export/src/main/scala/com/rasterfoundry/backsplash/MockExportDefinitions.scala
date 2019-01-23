@@ -14,7 +14,7 @@ object MockExportDefinitions {
     OutputDefinition(
       Some(WebMercator),
       true,
-      new URI("file:///tmp/test.tif"),
+      "file:///tmp/test.tif",
       Some("myDropboxCreds")
     )
 
@@ -24,9 +24,9 @@ object MockExportDefinitions {
       Extent(0, 0, 1, 1).toPolygon,
       RasterVar("mockAST"),
       Map(
-        "mockAST" -> List((new URI("file:///tmp/test/source1.tif"), 1),
-                          (new URI("file:///tmp/test/source2.tif"), 1),
-                          (new URI("file:///tmp/test/source3.tif"), 1)))
+        "mockAST" -> List(("file:///tmp/test/source1.tif", 1),
+                          ("file:///tmp/test/source2.tif", 1),
+                          ("file:///tmp/test/source3.tif", 1)))
     )
     ExportDefinition(id, source, outputDefinition)
   }
@@ -36,9 +36,9 @@ object MockExportDefinitions {
       1,
       Extent(0, 0, 1, 1).toPolygon,
       List(
-        (new URI("file:///tmp/test/source1.tif"), List(1, 2)),
-        (new URI("file:///tmp/test/source2.tif"), List(2, 3)),
-        (new URI("file:///tmp/test/source3.tif"), List(3, 4))
+        ("file:///tmp/test/source1.tif", List(1, 2)),
+        ("file:///tmp/test/source2.tif", List(2, 3)),
+        ("file:///tmp/test/source3.tif", List(3, 4))
       )
     )
     ExportDefinition(id, source, outputDefinition)

@@ -89,7 +89,6 @@ package object export {
       .layout
       .mapTransform(p)
     (x, y)
-
   }
 
   def exportSegmentLayout(extent: Extent, zoom: Int): GeoTiffSegmentLayout = {

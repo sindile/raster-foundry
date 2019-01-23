@@ -14,6 +14,7 @@ import Exportable.ops._
 
 import java.net.URI
 import java.util.UUID
+import scala.concurrent.ExecutionContext
 
 object BacksplashExport
     extends CommandApp(
@@ -49,6 +50,8 @@ object BacksplashExport
          mockAnalysisDefOpt,
          mockMosaicDefOpt).mapN {
           (exportDefUri, compressionLevel, mockAnalysisDef, mockMosaicDef) =>
+            implicit val cs: ContextShift[IO] =
+              IO.contextShift(ExecutionContext.global)
             if (mockMosaicDef) {
               println(MockExportDefinitions.mosaic.asJson)
             } else if (mockAnalysisDef) {

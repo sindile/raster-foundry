@@ -4,6 +4,7 @@ import geotrellis.raster._
 import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
 import cats._
+import cats.effect._
 import cats.implicits._
 import _root_.io.circe._
 import _root_.io.circe.generic.semiauto._
@@ -17,8 +18,9 @@ case class ExportDefinition[SourceDefinition: Exportable: Decoder](
     source: SourceDefinition,
     output: OutputDefinition
 ) {
-  def toGeoTiff(compression: Compression): GeoTiff[MultibandTile] =
-    source.toGeoTiff(compression)
+  def toGeoTiff(compression: Compression)(
+      implicit cs: ContextShift[IO]): GeoTiff[MultibandTile] =
+    source.toGeoTiff(source.exportZoom, compression)
 }
 
 object ExportDefinition {

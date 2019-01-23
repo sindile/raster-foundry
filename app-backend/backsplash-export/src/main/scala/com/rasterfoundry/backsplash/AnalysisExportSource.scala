@@ -9,6 +9,7 @@ import geotrellis.raster.io.geotiff._
 import geotrellis.contrib.vlm.RasterSource
 import geotrellis.proj4._
 import cats._
+import cats.effect._
 import cats.implicits._
 import _root_.io.circe._
 import _root_.io.circe.generic.semiauto._
@@ -19,12 +20,12 @@ case class AnalysisExportSource(
     zoom: Int,
     area: Polygon,
     ast: Expression,
-    params: Map[String, List[(URI, Int)]]
+    params: Map[String, List[(String, Int)]]
 ) {
   lazy val rsParams =
     params.mapValues { lst =>
       lst.map {
-        case (uri, band) => (getRasterSource(uri.toString), band)
+        case (uri, band) => (getRasterSource(uri), band)
       }
     }
 }
@@ -36,13 +37,18 @@ object AnalysisExportSource {
   implicit def exportable =
     new Exportable[AnalysisExportSource] {
       def keyedTileSegments(
-          self: AnalysisExportSource
-      ): Iterator[((Int, Int), MultibandTile)] = {
+          self: AnalysisExportSource,
+          zoom: Int
+      )(implicit cs: ContextShift[IO])
+        : Iterator[((Int, Int), MultibandTile)] = {
         ???
       }
 
       def exportCellType(self: AnalysisExportSource): CellType =
         DoubleConstantNoDataCellType
+
+      def exportZoom(self: AnalysisExportSource): Int =
+        self.zoom
 
       def exportExtent(self: AnalysisExportSource) = self.area.envelope
 
