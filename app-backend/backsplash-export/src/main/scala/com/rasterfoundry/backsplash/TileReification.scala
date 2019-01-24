@@ -37,12 +37,15 @@ object TileReification extends LazyLogging {
       ): (Int, Int, Int) => IO[Literal] = (z: Int, x: Int, y: Int) => {
         val ld = tmsLevels(z)
         val extent = ld.mapTransform.keyToExtent(x, y)
+        println(s"Extent: ${extent}")
         val subTilesIO = self.traverse {
           case (rs, bands) =>
             IO {
               rs.reproject(WebMercator, NearestNeighbor)
                 .tileToLayout(ld, NearestNeighbor)
-                .read(SpatialKey(x, y), bands)
+                .read(SpatialKey(x, y), bands) map { tile =>
+                tile.mapBands((n: Int, t: Tile) => t.toArrayTile)
+              }
             } flatMap {
               case Some(t) => IO.pure(Raster(t, extent))
               case _       => IO.pure(Raster(MultibandTile(invisiTile), extent))
