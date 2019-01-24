@@ -67,7 +67,9 @@ object BacksplashExport
               exportDefinition match {
                 case Right(exportDefinition) =>
                   val geotiff = exportDefinition.toGeoTiff(compression)
-                  GeoTiffWriter.write(geotiff, "outputlocation")
+                  println(s"About to write geotiff to ${output.destination}")
+                  GeoTiffWriter.write(geotiff,
+                                      exportDefinition.output.destination)
                 case Left(err) =>
                   throw err
               }
