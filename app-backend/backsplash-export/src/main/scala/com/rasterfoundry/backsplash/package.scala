@@ -102,9 +102,11 @@ package object export extends LazyLogging {
     println(s"Minimum Tile: ${minTileCol}, ${minTileRow}")
     println(s"Maximum Tile: ${maxTileCol}, ${maxTileRow}")
 
-    val tileCols = minTileCol - maxTileCol
-    val tileRows = minTileRow - maxTileRow
-    val tileLayout = TileLayout(tileCols, tileRows, 256, 256)
+    val tileCols = (minTileCol - maxTileCol) * 256
+    val tileRows = (minTileRow - maxTileRow) * 256
+    println(s"Columns: ${tileCols}, Rows: ${tileRows}")
+    val tileLayout =
+      TileLayout(tileCols / 256 + 1, tileRows / 256 + 1, 256, 256)
     GeoTiffSegmentLayout(
       tileCols,
       tileRows,
