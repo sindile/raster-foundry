@@ -1,14 +1,12 @@
 package com.rasterfoundry.backsplash.export
 
-import geotrellis.proj4.CRS
+import geotrellis.proj4.{CRS, LatLng, WebMercator}
 import geotrellis.vector.Extent
-import geotrellis.proj4.WebMercator
 import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
 import geotrellis.raster._
 import simulacrum._
 import cats.effect._
-
 import java.util.UUID
 
 @typeclass trait Exportable[A] {
@@ -36,7 +34,7 @@ import java.util.UUID
         compression = compression
       )
       .asInstanceOf[GeoTiffMultibandTile] // This hurts :(
-
-    MultibandGeoTiff(tifftile, exportExtent(self), exportCRS(self))
+    val e = exportExtent(self).reproject(LatLng, WebMercator)
+    MultibandGeoTiff(tifftile, e, exportCRS(self))
   }
 }
