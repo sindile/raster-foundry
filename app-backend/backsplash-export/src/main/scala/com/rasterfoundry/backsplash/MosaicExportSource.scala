@@ -57,16 +57,27 @@ object MosaicExportSource extends LazyLogging {
           val (x, y) = allTiles.head
           allTiles = allTiles.drop(1)
           val eval = LayerTms.identity(self.rsLayers)
+
+          println(s"Requesting Tile: (${x}, ${y})")
           val tile = eval(zoom, x, y).unsafeRunSync match {
-            case Valid(mbtile) =>
+            case Valid(mbtile) => {
+              println(s"Multiband Tile Bands: ${mbtile.bandCount}")
               mbtile
+            }
             case _ =>
               val bands = self.rsLayers.head._2
+              println(s"Invisitile Bands: ${bands}")
               MultibandTile(bands.map(_ => TileReification.invisiTile).toArray)
           }
-          ((x - minTileX, y - minTileY), tile)
+          val xLoc = x - minTileX
+          val yLoc = y - maxTileY
+          println(s"Tile Location: (${xLoc}, ${yLoc})")
+          ((xLoc, yLoc), tile)
         }
-        def hasNext = allTiles.length > 0
+        def hasNext = {
+          println(s"${allTiles.length} tiles left")
+          allTiles.length > 0
+        }
       }
     }
 
