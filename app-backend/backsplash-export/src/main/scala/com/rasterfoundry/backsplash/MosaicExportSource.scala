@@ -18,11 +18,11 @@ import com.typesafe.scalalogging.LazyLogging
 case class MosaicExportSource(
     zoom: Int,
     area: Polygon,
-    layers: List[(String, List[Int])]
+    layers: List[(String, List[Int], Option[Double])]
 ) {
-  lazy val rsLayers =
+  def rsLayers: List[(RasterSource, List[Int], Option[Double])] =
     layers.map {
-      case (uri, bands) => (getRasterSource(uri), bands)
+      case (uri, bands, ndOverride) => (getRasterSource(uri), bands, ndOverride)
     }
 }
 
@@ -36,46 +36,37 @@ object MosaicExportSource extends LazyLogging {
         zoom: Int
     )(implicit cs: ContextShift[IO]): Iterator[((Int, Int), MultibandTile)] = {
       val extent = exportExtent(self)
-      println(s"Exporting Extent: ${extent}")
-      val (minTileX, minTileY) = getTileXY(extent.ymin, extent.xmin, zoom)
-      val (maxTileX, maxTileY) = getTileXY(extent.ymax, extent.xmax, zoom)
-
-      println(s"ys: ${maxTileY} to ${minTileY}")
-      println(s"xs: ${minTileX} to ${maxTileX}")
-
-      val tileList = for {
-        xs <- minTileX to maxTileX
-        ys <- maxTileY to minTileY
-      } yield (xs, ys)
-
-      println(s"${tileList.length} tiles to export from source")
+      val tileList = TilesForExtent.latLng(extent, zoom)
+      val minTileX = tileList.map(_._1).min
+      val minTileY = tileList.map(_._2).min
 
       new Iterator[((Int, Int), MultibandTile)] {
         var allTiles = tileList
+        val eval = LayerTms.identity(self.rsLayers)
 
-        def next = {
+        def next() = {
           val (x, y) = allTiles.head
           allTiles = allTiles.drop(1)
-          val eval = LayerTms.identity(self.rsLayers)
 
-          println(s"Requesting Tile: (${x}, ${y})")
+          logger.debug(s"Requesting Tile @$zoom/$x/${y}")
           val tile = eval(zoom, x, y).unsafeRunSync match {
-            case Valid(mbtile) => {
-              println(s"Multiband Tile Bands: ${mbtile.bandCount}")
+            case Valid(mbtile) =>
+              logger.debug(
+                s"Constructed Multiband tile @${zoom}/$x/$y with bands ${mbtile.bandCount}")
               mbtile
-            }
             case _ =>
               val bands = self.rsLayers.head._2
-              println(s"Invisitile Bands: ${bands}")
+              logger.debug(
+                s"Generating empty tile @${zoom}/${x}/${y} with bands ${bands.length}")
               MultibandTile(bands.map(_ => TileReification.invisiTile).toArray)
           }
           val xLoc = x - minTileX
-          val yLoc = y - maxTileY
-          println(s"Tile Location: (${xLoc}, ${yLoc})")
+          val yLoc = y - minTileY
+          logger.debug(s"Tiff segment Location: (${xLoc}, ${yLoc})")
           ((xLoc, yLoc), tile)
         }
         def hasNext = {
-          println(s"${allTiles.length} tiles left")
+          logger.debug(s"${allTiles.length} tiles left")
           allTiles.length > 0
         }
       }
@@ -84,9 +75,11 @@ object MosaicExportSource extends LazyLogging {
     def exportZoom(self: MosaicExportSource): Int =
       self.zoom
 
-    def exportCellType(self: MosaicExportSource) = DoubleConstantNoDataCellType
+    def exportCellType(self: MosaicExportSource) =
+      DoubleConstantNoDataCellType
 
-    def exportExtent(self: MosaicExportSource) = self.area.envelope
+    def exportExtent(self: MosaicExportSource) =
+      self.area.envelope
 
     def segmentLayout(self: MosaicExportSource) =
       exportSegmentLayout(self.area.envelope, self.zoom)

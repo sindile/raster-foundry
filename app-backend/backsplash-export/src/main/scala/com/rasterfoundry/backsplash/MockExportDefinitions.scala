@@ -36,9 +36,9 @@ object MockExportDefinitions {
       1,
       Extent(0, 0, 1, 1).toPolygon,
       List(
-        ("file:///tmp/test/source1.tif", List(1, 2)),
-        ("file:///tmp/test/source2.tif", List(2, 3)),
-        ("file:///tmp/test/source3.tif", List(3, 4))
+        ("file:///tmp/test/source1.tif", List(1, 2), Some(0)),
+        ("file:///tmp/test/source2.tif", List(2, 3), Some(0)),
+        ("file:///tmp/test/source3.tif", List(3, 4), Some(0))
       )
     )
     ExportDefinition(id, source, outputDefinition)

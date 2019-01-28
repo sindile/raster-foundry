@@ -34,7 +34,9 @@ import java.util.UUID
         compression = compression
       )
       .asInstanceOf[GeoTiffMultibandTile] // This hurts :(
-    val e = exportExtent(self).reproject(LatLng, WebMercator)
-    MultibandGeoTiff(tifftile, e, exportCRS(self))
+    val latLngExtent = exportExtent(self)
+    val tilesForExtent = TilesForExtent.latLng(latLngExtent, zoom)
+    val outputExtent = ExtentOfTiles.webMercator(tilesForExtent, zoom)
+    MultibandGeoTiff(tifftile, outputExtent, exportCRS(self))
   }
 }

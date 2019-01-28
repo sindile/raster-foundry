@@ -10,6 +10,7 @@ import geotrellis.raster.io.geotiff.writer.GeoTiffWriter
 import _root_.io.circe._
 import _root_.io.circe.syntax._
 import _root_.io.circe.parser._
+import com.typesafe.scalalogging._
 import Exportable.ops._
 
 import java.net.URI
@@ -52,6 +53,8 @@ object BacksplashExport
           (exportDefUri, compressionLevel, mockAnalysisDef, mockMosaicDef) =>
             implicit val cs: ContextShift[IO] =
               IO.contextShift(ExecutionContext.global)
+            val logger = Logger[BacksplashExport.type]
+
             if (mockMosaicDef) {
               println(MockExportDefinitions.mosaic.asJson)
             } else if (mockAnalysisDef) {
@@ -67,7 +70,7 @@ object BacksplashExport
               exportDefinition match {
                 case Right(exportDefinition) =>
                   val geotiff = exportDefinition.toGeoTiff(compression)
-                  println(
+                  logger.info(
                     s"About to write geotiff to ${exportDefinition.output.destination}")
                   GeoTiffWriter.write(geotiff,
                                       exportDefinition.output.destination)

@@ -22,39 +22,72 @@ object TileReification extends LazyLogging {
     for (zoom <- 0 to 64) yield scheme.levelForZoom(zoom).layout
   }.toArray
 
-  val invisiCellType = IntUserDefinedNoDataCellType(0)
-  val invisiTile = IntUserDefinedNoDataArrayTile(Array.fill(65536)(0),
-                                                 256,
-                                                 256,
-                                                 invisiCellType)
+  private def md5Hash(text: String): String =
+    java.security.MessageDigest
+      .getInstance("MD5")
+      .digest(text.getBytes())
+      .map(0xFF & _)
+      .map { "%02x".format(_) }
+      .foldLeft("") { _ + _ }
+
+  val invisiCellType = DoubleConstantNoDataCellType
+  val invisiTile = ArrayTile.empty(invisiCellType, 256, 256)
 
   implicit val mosaicExportTmsReification =
-    new TmsReification[List[(RasterSource, List[Int])]] {
-      def kind(self: List[(RasterSource, List[Int])]): MamlKind = MamlKind.Image
+    new TmsReification[List[(RasterSource, List[Int], Option[Double])]] {
+      def kind(
+          self: List[(RasterSource, List[Int], Option[Double])]): MamlKind =
+        MamlKind.Image
 
-      def tmsReification(self: List[(RasterSource, List[Int])], buffer: Int)(
+      def tmsReification(self: List[(RasterSource, List[Int], Option[Double])],
+                         buffer: Int)(
           implicit contextShift: ContextShift[IO]
       ): (Int, Int, Int) => IO[Literal] = (z: Int, x: Int, y: Int) => {
         val ld = tmsLevels(z)
         val extent = ld.mapTransform.keyToExtent(x, y)
-        println(s"Extent: ${extent}")
-        val subTilesIO = self.traverse {
-          case (rs, bands) =>
-            IO {
-              rs.reproject(WebMercator, NearestNeighbor)
-                .tileToLayout(ld, NearestNeighbor)
-                .read(SpatialKey(x, y), bands) map { tile =>
-                tile.mapBands((n: Int, t: Tile) => t.toArrayTile)
+        val bandCount = self.head._2.length
+        val subTilesIO: IO[List[Option[MultibandTile]]] =
+          self.reverse.traverse {
+            case (rs, bands, ndOverride) =>
+              IO {
+                rs.reproject(WebMercator, NearestNeighbor)
+                  .tileToLayout(ld, NearestNeighbor)
+                  .read(SpatialKey(x, y), bands) match {
+                  case Some(mbtile) =>
+                    logger.debug(
+                      s"--HIT-- uri: ${rs.uri}; celltype: ${mbtile.cellType}, zxy: $z/$x/$y")
+                    logger.trace(s"b1 hash: ${md5Hash(
+                      mbtile.band(0).toArray.take(20).mkString(""))}, vals ${mbtile.band(0).toArray.take(10).toList}")
+                    logger.trace(s"b2 hash: ${md5Hash(
+                      mbtile.band(1).toArray.take(20).mkString(""))}, vals ${mbtile.band(1).toArray.take(10).toList}")
+                    logger.trace(s"b3 hash: ${md5Hash(
+                      mbtile.band(2).toArray.take(20).mkString(""))}, vals ${mbtile.band(2).toArray.take(10).toList}")
+
+                    ndOverride.map { nd =>
+                      val currentCT = mbtile.cellType
+                      mbtile.interpretAs(currentCT.withNoData(Some(nd)))
+                    } orElse {
+                      Some(mbtile)
+                    }
+                  case None =>
+                    logger.debug(s"--MISS-- uri: ${rs.uri}; zxy: $z/$x/$y")
+                    None
+                }
               }
-            } flatMap {
-              case Some(t) => IO.pure(Raster(t, extent))
-              case _       => IO.pure(Raster(MultibandTile(invisiTile), extent))
-            }
-        }
-        val exportTile = subTilesIO.map { subtiles =>
-          subtiles.reduceOption(_ merge _) match {
-            case Some(tile) => tile
-            case _          => Raster(MultibandTile(invisiTile), extent)
+          }
+        val exportTile: IO[Raster[MultibandTile]] = subTilesIO.map { subtiles =>
+          subtiles.flatten.reduceOption({ (t1, t2) =>
+            logger.debug(
+              s"Merging celltypes ct1: ${t1.cellType}; ct2: ${t2.cellType}")
+            t1 merge t2
+          }) match {
+            case Some(mbtile) =>
+              Raster(mbtile, extent)
+            case None =>
+              val tiles = (1 to bandCount).map { _ =>
+                invisiTile
+              }
+              Raster(MultibandTile(tiles), extent)
           }
         }
         exportTile.map(RasterLit(_))
