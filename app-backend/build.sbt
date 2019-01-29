@@ -366,6 +366,7 @@ lazy val backsplashCore = Project("backsplash-core", file("backsplash-core"))
 
 // maml / better-abstracted tile server
 lazy val backsplashExport = Project("backsplash-export", file("backsplash-export"))
+  .dependsOn(common)
   .settings(commonSettings: _*)
   .settings(resolvers += Resolver.file("local", file(Path.userHome.absolutePath + "/.ivy2/local"))(Resolver.ivyStylePatterns))
   .settings(

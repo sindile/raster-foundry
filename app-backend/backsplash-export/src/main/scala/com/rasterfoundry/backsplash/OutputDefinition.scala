@@ -9,7 +9,6 @@ import java.util.UUID
 
 case class OutputDefinition(
     crs: Option[CRS],
-    crop: Boolean,
     destination: String,
     dropboxCredential: Option[String]
 )

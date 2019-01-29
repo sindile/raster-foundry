@@ -3,8 +3,10 @@ package com.rasterfoundry.backsplash.export
 import TileReification._
 import geotrellis.server._
 import geotrellis.raster._
+import geotrellis.raster.rasterize._
 import geotrellis.vector.Polygon
 import geotrellis.contrib.vlm.RasterSource
+import geotrellis.proj4._
 import _root_.io.circe._
 import _root_.io.circe.generic.semiauto._
 import cats.effect._
@@ -53,7 +55,11 @@ object MosaicExportSource extends LazyLogging {
             case Valid(mbtile) =>
               logger.debug(
                 s"Constructed Multiband tile @${zoom}/$x/$y with bands ${mbtile.bandCount}")
-              mbtile
+              val tileExtent =
+                TileReification.tmsLevels(zoom).mapTransform.keyToExtent(x, y)
+              mbtile.mask(tileExtent,
+                          List(self.area.reproject(LatLng, WebMercator)),
+                          Rasterizer.Options.DEFAULT)
             case _ =>
               val bands = self.rsLayers.head._2
               logger.debug(

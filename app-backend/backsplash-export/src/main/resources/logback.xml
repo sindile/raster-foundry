@@ -5,7 +5,7 @@
     </encoder>
   </appender>
 
-  <logger name="com.rasterfoundry.backsplash" level="DEBUG"/>
+  <logger name="com.rasterfoundry.backsplash" level="ALL"/>
   <logger name="geotrellis.server" level="WARN"/>
 
   <root level="INFO">

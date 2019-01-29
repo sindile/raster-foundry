@@ -22,11 +22,15 @@ object MockExportDefinitions {
     val source = AnalysisExportSource(
       1,
       Extent(0, 0, 1, 1).toPolygon,
-      RasterVar("mockAST"),
+      Addition(List(RasterVar("mockAST1"), RasterVar("mockAST2"))),
       Map(
-        "mockAST" -> List(("file:///tmp/test/source1.tif", 1),
-                          ("file:///tmp/test/source2.tif", 1),
-                          ("file:///tmp/test/source3.tif", 1)))
+        "mockAST1" -> List(("file:///tmp/test/source1.tif", 1, Some(0)),
+                           ("file:///tmp/test/source2.tif", 1, Some(0)),
+                           ("file:///tmp/test/source3.tif", 1, Some(0))),
+        "mockAST2" -> List(("file:///tmp/test/source1.tif", 1, Some(0)),
+                           ("file:///tmp/test/source2.tif", 1, Some(0)),
+                           ("file:///tmp/test/source3.tif", 1, Some(0)))
+      )
     )
     ExportDefinition(id, source, outputDefinition)
   }

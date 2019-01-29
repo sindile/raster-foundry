@@ -69,11 +69,16 @@ object BacksplashExport
 
               exportDefinition match {
                 case Right(exportDefinition) =>
-                  val geotiff = exportDefinition.toGeoTiff(compression)
                   logger.info(
-                    s"About to write geotiff to ${exportDefinition.output.destination}")
+                    s"Beginning tiff export to ${exportDefinition.output.destination}.")
+                  val t0 = System.nanoTime()
+                  val geotiff = exportDefinition.toGeoTiff(compression)
                   GeoTiffWriter.write(geotiff,
                                       exportDefinition.output.destination)
+                  val t1 = System.nanoTime()
+                  val secondsElapsed = (t1 - t0).toDouble / 1000000000
+                  val secondsString = "%.2f".format(secondsElapsed)
+                  logger.info(s"Export completed in $secondsString seconds")
                 case Left(err) =>
                   throw err
               }
