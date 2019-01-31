@@ -18,11 +18,9 @@
 ### Removed
 - Removed unused dependency `geotrellis-raster-testkit`[\#4482](https://github.com/raster-foundry/raster-foundry/pull/4482)
 - Removed legacy tile server subproject and configuration [\#4478](https://github.com/raster-foundry/raster-foundry/pull/4478)
-- Removed unused metrics collection resources and application code [\#4475](https://github.com/raster-foundry/raster-foundry/pull/4475), [\#4493](https://github.com/raster-foundry/raster-foundry/pull/4493)
 
 ### Fixed
 - Shapes drawn within the scene search filter context can now be saved [\#4474](https://github.com/raster-foundry/raster-foundry/pull/4474)
-- Mosaics are again constructed with rasters instead of with IO[rasters] [\#4498](https://github.com/raster-foundry/raster-foundry/pull/4498)
 
 ### Security
 - Upgrade webpack-dev-server to address vulnerability (https://nvd.nist.gov/vuln/detail/CVE-2018-14732) [\#4476](https://github.com/raster-foundry/raster-foundry/pull/4476)
@@ -32,7 +30,11 @@
 ### Changed
 - Moved common authentication logic to http4s-util subproject [\#4496](https://github.com/raster-foundry/raster-foundry/pull/4496)
 
+### Removed
+- Removed unused metrics collection resources and application code [\#4475](https://github.com/raster-foundry/raster-foundry/pull/4475), [\#4493](https://github.com/raster-foundry/raster-foundry/pull/4493)
+
 ### Fixed
+- Mosaics are again constructed with rasters instead of with IO[rasters] [\#4498](https://github.com/raster-foundry/raster-foundry/pull/4498)
 - Improved healthcheck logic in backsplash healthcheck endpoint [\#4548](https://github.com/raster-foundry/raster-foundry/pull/4548)
 
 ## [1.16.4](https://github.com/raster-foundry/raster-foundry/tree/1.16.4) (2019-01-21)
