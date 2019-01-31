@@ -78,6 +78,7 @@ project/plugins/project/
 /app-backend/project/.boot/
 /app-backend/project/.ivy/
 /app-backend/.sbtopts
+/app-backend/generated_code/
 
 # Molecule
 .molecule/
