@@ -28,7 +28,8 @@ import scalacache.Flags
 import scala.concurrent.duration._
 
 class Authenticators(val xa: Transactor[IO], mtr: MetricsRegistrator)
-    extends LazyLogging with RFHttp4s.Authenticators {
+    extends LazyLogging
+    with RFHttp4s.Authenticators {
 
   val verifyJWTTimer = mtr.newTimer(classOf[Authenticators], "verify-jwt")
   val tokenAuthTimer = mtr.newTimer(classOf[Authenticators], "token-auth")
