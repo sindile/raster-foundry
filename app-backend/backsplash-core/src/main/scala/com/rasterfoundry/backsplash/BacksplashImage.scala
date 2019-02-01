@@ -106,19 +106,22 @@ object BacksplashImage extends RasterSourceUtils with LazyLogging {
   val enableGDAL = Config.RasterSource.enableGDAL
 
   def getRasterSource(uri: String): RasterSource = {
-    if (enableGDAL) {
-      logger.debug(s"Using GDAL Raster Source: ${uri}")
-      // Do not bother caching - let GDAL internals worry about that
-      GDALRasterSource(URLDecoder.decode(uri))
-    } else {
-      memoizeSync(None) {
+    memoizeSync(None) {
+      if (enableGDAL) {
+        logger.debug(s"Using GDAL Raster Source: ${uri}")
+        val rs = GDALRasterSource(URLDecoder.decode(uri))
+        // access lazy vals so they are cached
+        rs.rasterExtent
+        rs.resolutions
+        rs: RasterSource
+      } else {
         logger.debug(s"Using GeoTiffRasterSource: ${uri}")
         val rs = GeoTiffRasterSource(uri)
         // access lazy vals so they are cached
         rs.tiff
         rs.rasterExtent
         rs.resolutions
-        rs
+        rs: RasterSource
       }
     }
   }

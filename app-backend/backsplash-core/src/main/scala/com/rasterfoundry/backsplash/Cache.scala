@@ -12,6 +12,9 @@ import scalacache.serialization.binary._
 import net.spy.memcached._
 
 import java.net.InetSocketAddress
+
+import geotrellis.contrib.vlm.RasterSource
+
 import scala.collection.JavaConverters._
 
 object Cache extends LazyLogging {
@@ -49,8 +52,8 @@ object Cache extends LazyLogging {
     Flags(Config.cache.histogramCacheEnable, Config.cache.histogramCacheEnable)
   logger.info(s"Histogram Cache Status: ${histCacheFlags}")
 
-  val rasterSourceCache: Cache[GeoTiffRasterSource] =
-    CaffeineCache[GeoTiffRasterSource]
+  val rasterSourceCache: Cache[RasterSource] =
+    CaffeineCache[RasterSource]
   val rasterSourceCacheFlags: Flags = Flags(
     Config.cache.rasterSourceCacheEnable,
     Config.cache.rasterSourceCacheEnable)
