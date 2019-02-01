@@ -113,6 +113,7 @@ object BacksplashImage extends RasterSourceUtils with LazyLogging {
         // access lazy vals so they are cached
         rs.rasterExtent
         rs.resolutions
+        rs.cellSize
         rs: RasterSource
       } else {
         logger.debug(s"Using GeoTiffRasterSource: ${uri}")
@@ -121,6 +122,7 @@ object BacksplashImage extends RasterSourceUtils with LazyLogging {
         rs.tiff
         rs.rasterExtent
         rs.resolutions
+        rs.cellSize
         rs: RasterSource
       }
     }
