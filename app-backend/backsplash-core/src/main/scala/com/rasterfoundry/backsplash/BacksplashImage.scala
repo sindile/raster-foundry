@@ -13,14 +13,12 @@ import geotrellis.contrib.vlm.geotiff.GeoTiffRasterSource
 import java.util.UUID
 
 import com.typesafe.scalalogging.LazyLogging
-import geotrellis.contrib.vlm.{LayoutTileSource, RasterSource}
+import geotrellis.contrib.vlm.RasterSource
 import geotrellis.contrib.vlm.gdal.GDALRasterSource
 import geotrellis.raster.MultibandTile
 import scalacache._
 import scalacache.memoization._
 import scalacache.modes.sync._
-
-import scala.collection.mutable
 
 /** An image used in a tile or export service, can be color corrected, and requested a subet of the bands from the
   * image
@@ -54,15 +52,6 @@ final case class BacksplashImage(
 
   lazy val rasterSource = BacksplashImage.getRasterSource(uri)
 
-  /**
-    * Let's keep all dependent RasterSources references here,
-    * All references would be released after this object becomes unreachable
-    * */
-  private lazy val subRasterSources: mutable.Set[(Int, RasterSource)] =
-    mutable.Set()
-  private lazy val subRasterSourcesRE
-    : mutable.Set[(RasterExtent, RasterSource)] = mutable.Set()
-
   /** Read ZXY tile - defers to a private method to enable disable/enabling of cache **/
   def read(z: Int, x: Int, y: Int): Option[MultibandTile] = {
     readWithCache(z, x, y)
@@ -74,16 +63,10 @@ final case class BacksplashImage(
       logger.debug(s"Reading ${z}-${x}-${y} - Image: ${imageId} at ${uri}")
       val layoutDefinition = BacksplashImage.tmsLevels(z)
       logger.debug(s"CELL TYPE: ${rasterSource.cellType}")
-
-      val rs = rasterSource
+      rasterSource
         .reproject(WebMercator)
         .tileToLayout(layoutDefinition, NearestNeighbor)
-
-      // create a hard reference to the actual source
-      // there can be only a single entry per zoom level
-      if (BacksplashImage.enableGDAL) { subRasterSources += (z -> rs.source) }
-
-      rs.read(SpatialKey(x, y), subsetBands) map { tile =>
+        .read(SpatialKey(x, y), subsetBands) map { tile =>
         tile.mapBands((n: Int, t: Tile) => t.toArrayTile)
       }
     }
@@ -106,17 +89,11 @@ final case class BacksplashImage(
       val rasterExtent = RasterExtent(extent, cs)
       logger.debug(
         s"Expecting to read ${rasterExtent.cols * rasterExtent.rows} cells (${rasterExtent.cols} cols, ${rasterExtent.rows} rows)")
-      val rs = rasterSource
+      rasterSource
         .reproject(WebMercator, NearestNeighbor)
         .resampleToGrid(rasterExtent, NearestNeighbor)
-
-      // create a hard reference to the actual source
-      // there can be only a single entry per raster extent
-      if (BacksplashImage.enableGDAL) {
-        subRasterSourcesRE += (rasterExtent -> rs)
-      }
-
-      rs.read(extent, subsetBands).map(_.tile)
+        .read(extent, subsetBands)
+        .map(_.tile)
     }
   }
 }
@@ -133,10 +110,6 @@ object BacksplashImage extends RasterSourceUtils with LazyLogging {
       logger.debug(s"Using GDAL Raster Source: ${uri}")
       // Do not bother caching - let GDAL internals worry about that
       val rs = GDALRasterSource(URLDecoder.decode(uri, "UTF-8"))
-      // access lazy vals so they are evaluated
-      rs.rasterExtent
-      rs.resolutions
-      rs
     } else {
       memoizeSync(None) {
         logger.debug(s"Using GeoTiffRasterSource: ${uri}")
