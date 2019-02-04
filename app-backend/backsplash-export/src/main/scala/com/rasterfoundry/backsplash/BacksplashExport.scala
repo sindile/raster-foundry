@@ -1,5 +1,9 @@
 package com.rasterfoundry.backsplash.export
 
+import com.rasterfoundry.backsplash.export.shapes._
+import com.rasterfoundry.backsplash.export.ExportableInstances._
+import com.rasterfoundry.common.datamodel.export._
+
 import cats._
 import cats.effect._
 import cats.implicits._
@@ -7,9 +11,11 @@ import com.monovore.decline._
 import geotrellis.raster.io.geotiff._
 import geotrellis.raster.io.geotiff.compression._
 import geotrellis.raster.io.geotiff.writer.GeoTiffWriter
+import shapeless._
 import _root_.io.circe._
 import _root_.io.circe.syntax._
 import _root_.io.circe.parser._
+import _root_.io.circe.shapes._
 import com.typesafe.scalalogging._
 import Exportable.ops._
 
@@ -56,25 +62,30 @@ object BacksplashExport
             val logger = Logger[BacksplashExport.type]
 
             if (mockMosaicDef) {
-              println(MockExportDefinitions.mosaic.asJson)
+              println(ExportDefinition.mockMosaic.asJson)
             } else if (mockAnalysisDef) {
-              println(MockExportDefinitions.analysis.asJson)
+              println(ExportDefinition.mockAnalysis.asJson)
             } else {
               val compression = DeflateCompression(compressionLevel)
               val exportDefString = UriHandler.handle(exportDefUri)
-              val exportDefinition = List(
-                decode[ExportDefinition[AnalysisExportSource]](exportDefString),
-                decode[ExportDefinition[MosaicExportSource]](exportDefString)
-              ).reduce(_ orElse _)
 
-              exportDefinition match {
-                case Right(exportDefinition) =>
+              // The Coproduct of available Exportables (the appropriate coproduct
+              //  instances of Decoder and Exportable are necessary)
+              type Exports =
+                ExportDefinition[AnalysisExportSource] :+:
+                  ExportDefinition[MosaicExportSource] :+:
+                  CNil
+              val decodedExportDef = decode[Exports](exportDefString)
+
+              decodedExportDef match {
+                case Right(exportDef) =>
                   logger.info(
-                    s"Beginning tiff export to ${exportDefinition.output.destination}.")
+                    s"Beginning tiff export to ${exportDef.exportDestination}.")
                   val t0 = System.nanoTime()
-                  val geotiff = exportDefinition.toGeoTiff(compression)
-                  GeoTiffWriter.write(geotiff,
-                                      exportDefinition.output.destination)
+
+                  val geotiff = exportDef.toGeoTiff(compression)
+                  GeoTiffWriter.write(geotiff, exportDef.exportDestination)
+
                   val t1 = System.nanoTime()
                   val secondsElapsed = (t1 - t0).toDouble / 1000000000
                   val secondsString = "%.2f".format(secondsElapsed)

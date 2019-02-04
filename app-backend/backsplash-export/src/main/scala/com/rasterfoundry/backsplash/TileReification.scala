@@ -1,5 +1,7 @@
 package com.rasterfoundry.backsplash.export
 
+import com.rasterfoundry.common.datamodel.export._
+
 import geotrellis.raster._
 import geotrellis.raster.resample._
 import geotrellis.proj4._
@@ -34,12 +36,11 @@ object TileReification extends LazyLogging {
   val invisiTile = ArrayTile.empty(invisiCellType, 256, 256)
 
   implicit val mosaicExportTmsReification =
-    new TmsReification[List[(RasterSource, List[Int], Option[Double])]] {
-      def kind(
-          self: List[(RasterSource, List[Int], Option[Double])]): MamlKind =
+    new TmsReification[List[(String, List[Int], Option[Double])]] {
+      def kind(self: List[(String, List[Int], Option[Double])]): MamlKind =
         MamlKind.Image
 
-      def tmsReification(self: List[(RasterSource, List[Int], Option[Double])],
+      def tmsReification(self: List[(String, List[Int], Option[Double])],
                          buffer: Int)(
           implicit contextShift: ContextShift[IO]
       ): (Int, Int, Int) => IO[Literal] = (z: Int, x: Int, y: Int) => {
@@ -47,15 +48,16 @@ object TileReification extends LazyLogging {
         val extent = ld.mapTransform.keyToExtent(x, y)
         val bandCount = self.head._2.length
         val subTilesIO: IO[List[Option[MultibandTile]]] =
-          self.reverse.traverse {
-            case (rs, bands, ndOverride) =>
+          self.traverse {
+            case (uri, bands, ndOverride) =>
               IO {
-                rs.reproject(WebMercator, NearestNeighbor)
+                getRasterSource(uri)
+                  .reproject(WebMercator, NearestNeighbor)
                   .tileToLayout(ld, NearestNeighbor)
                   .read(SpatialKey(x, y), bands) match {
                   case Some(mbtile) =>
                     logger.debug(
-                      s"--HIT-- uri: ${rs.uri}; celltype: ${mbtile.cellType}, zxy: $z/$x/$y")
+                      s"--HIT-- uri: ${uri}; celltype: ${mbtile.cellType}, zxy: $z/$x/$y")
                     logger.trace(s"b1 hash: ${md5Hash(
                       mbtile.band(0).toArray.take(100).mkString(""))}, vals ${mbtile.band(0).toArray.take(10).toList}")
                     logger.trace(s"b2 hash: ${md5Hash(
@@ -70,7 +72,7 @@ object TileReification extends LazyLogging {
                       Some(mbtile)
                     }
                   case None =>
-                    logger.debug(s"--MISS-- uri: ${rs.uri}; zxy: $z/$x/$y")
+                    logger.debug(s"--MISS-- uri: ${uri}; zxy: $z/$x/$y")
                     None
                 }
               }
@@ -95,25 +97,26 @@ object TileReification extends LazyLogging {
     }
 
   implicit val analysisExportTmsReification =
-    new TmsReification[List[(RasterSource, Int, Option[Double])]] {
-      def kind(self: List[(RasterSource, Int, Option[Double])]): MamlKind =
+    new TmsReification[List[(String, Int, Option[Double])]] {
+      def kind(self: List[(String, Int, Option[Double])]): MamlKind =
         MamlKind.Image
 
-      def tmsReification(self: List[(RasterSource, Int, Option[Double])],
+      def tmsReification(self: List[(String, Int, Option[Double])],
                          buffer: Int)(
           implicit contextShift: ContextShift[IO]
       ): (Int, Int, Int) => IO[Literal] = (z: Int, x: Int, y: Int) => {
         val ld = tmsLevels(z)
         val extent = ld.mapTransform.keyToExtent(x, y)
         val subTilesIO: IO[List[Option[MultibandTile]]] = self.traverse {
-          case (rs, band, ndOverride) =>
+          case (uri, band, ndOverride) =>
             IO {
-              rs.reproject(WebMercator, NearestNeighbor)
+              getRasterSource(uri)
+                .reproject(WebMercator, NearestNeighbor)
                 .tileToLayout(ld, NearestNeighbor)
                 .read(SpatialKey(x, y), Seq(band)) match {
                 case Some(tile) =>
                   logger.debug(
-                    s"--HIT-- uri: ${rs.uri}; celltype: ${tile.cellType}, zxy: $z/$x/$y")
+                    s"--HIT-- uri: ${uri}; celltype: ${tile.cellType}, zxy: $z/$x/$y")
                   ndOverride.map { nd =>
                     val currentCT = tile.cellType
                     tile.interpretAs(currentCT.withNoData(Some(nd)))
@@ -121,7 +124,7 @@ object TileReification extends LazyLogging {
                     Some(tile)
                   }
                 case None =>
-                  logger.debug(s"--MISS-- uri: ${rs.uri}; zxy: $z/$x/$y")
+                  logger.debug(s"--MISS-- uri: ${uri}; zxy: $z/$x/$y")
                   None
               }
             }

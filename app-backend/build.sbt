@@ -215,6 +215,7 @@ lazy val common = Project("common", file("common"))
       Dependencies.geotrellisSpark,
       Dependencies.geotrellisGeotools,
       Dependencies.geotrellisVectorTestkit,
+      Dependencies.mamlJvm,
       Dependencies.geotools,
       Dependencies.jts,
       Dependencies.sparkCore,

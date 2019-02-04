@@ -24,19 +24,22 @@ import java.util.UUID
 
   @op("segmentLayout") def segmentLayout(self: A): GeoTiffSegmentLayout
 
-  @op("toGeoTiff") def toGeoTiff(self: A, zoom: Int, compression: Compression)(
+  @op("exportDestination") def exportDestination(self: A): String
+
+  @op("toGeoTiff") def toGeoTiff(self: A, compression: Compression)(
       implicit cs: ContextShift[IO]): MultibandGeoTiff = {
     val tifftile = GeoTiffBuilder[MultibandTile]
       .makeTile(
-        keyedTileSegments(self, zoom),
+        keyedTileSegments(self, exportZoom(self)),
         segmentLayout = segmentLayout(self),
         cellType = exportCellType(self),
         compression = compression
       )
       .asInstanceOf[GeoTiffMultibandTile] // This hurts :(
     val latLngExtent = exportExtent(self)
-    val tilesForExtent = TilesForExtent.latLng(latLngExtent, zoom)
-    val outputExtent = ExtentOfTiles.webMercator(tilesForExtent, zoom)
+    val tilesForExtent = TilesForExtent.latLng(latLngExtent, exportZoom(self))
+    val outputExtent =
+      ExtentOfTiles.webMercator(tilesForExtent, exportZoom(self))
     MultibandGeoTiff(tifftile, outputExtent, exportCRS(self))
   }
 }

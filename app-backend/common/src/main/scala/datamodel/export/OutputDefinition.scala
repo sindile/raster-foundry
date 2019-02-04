@@ -1,4 +1,4 @@
-package com.rasterfoundry.backsplash.export
+package com.rasterfoundry.common.datamodel.export
 
 import geotrellis.proj4.CRS
 import _root_.io.circe._
