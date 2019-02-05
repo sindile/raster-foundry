@@ -14,7 +14,7 @@ case class MosaicExportSource(
     zoom: Int,
     area: MultiPolygon,
     layers: List[(String, List[Int], Option[Double])]
-) extends ExportSource
+)
 
 object MosaicExportSource {
   implicit val encoder = deriveEncoder[MosaicExportSource]

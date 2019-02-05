@@ -84,8 +84,7 @@ object ExportDao extends Dao[Export] {
       .option
   }
 
-  def getExportDefinition(export: Export,
-                          user: User): ConnectionIO[ExportDefinition] = {
+  def getExportDefinition(export: Export, user: User): ConnectionIO[Json] = {
     val exportOptions = export.exportOptions.as[ExportOptions] match {
       case Left(e) =>
         throw new Exception(
@@ -105,17 +104,17 @@ object ExportDao extends Dao[Export] {
       )
     }
 
-    val exportSource: ConnectionIO[ExportSource] = {
+    val exportSource: ConnectionIO[Json] = {
 
       logger.info(s"Project id when getting input style: ${export.projectId}")
       logger.info(s"Tool run id when getting input style: ${export.toolRunId}")
       (export.projectId, export.toolRunId) match {
         // Exporting a tool-run
         case (_, Some(toolRunId)) =>
-          astInput(toolRunId, exportOptions).widen
+          astInput(toolRunId, exportOptions).map(_.asJson)
         // Exporting a project
         case (Some(projectId), None) =>
-          mosaicInput(projectId, exportOptions).widen
+          mosaicInput(projectId, exportOptions).map(_.asJson)
         case (None, None) =>
           throw new Exception(
             s"Export Definitions ${export.id} does not have project or ast input defined")
@@ -126,13 +125,15 @@ object ExportDao extends Dao[Export] {
       _ <- logger.info("Creating output definition").pure[ConnectionIO]
       outputDef <- outputDefinition
       _ <- logger
-        .info(s"Created output definition for ${outputDef.destination}")
+        .info(s"Created output definition for ${exportOptions.source}")
         .pure[ConnectionIO]
       _ <- logger.info(s"Creating input definition").pure[ConnectionIO]
       sourceDef <- exportSource
       _ <- logger.info("Created input definition").pure[ConnectionIO]
     } yield {
-      ExportDefinition(export.id, sourceDef, outputDef)
+      Json.obj("id" -> export.id.asJson,
+               "src" -> sourceDef,
+               "output" -> outputDef.asJson)
     }
   }
 

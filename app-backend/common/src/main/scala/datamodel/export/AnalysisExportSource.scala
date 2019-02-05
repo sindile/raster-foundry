@@ -15,7 +15,7 @@ case class AnalysisExportSource(
     area: MultiPolygon,
     ast: Expression,
     params: Map[String, List[(String, Int, Option[Double])]]
-) extends ExportSource
+)
 
 object AnalysisExportSource {
   implicit val encoder = deriveEncoder[AnalysisExportSource]

@@ -193,7 +193,8 @@ lazy val root = Project("root", file("."))
              migrations,
              batch,
              backsplashCore,
-             backsplashServer)
+             backsplashServer,
+             backsplashExport)
 
 lazy val api = Project("api", file("api"))
   .dependsOn(db, common % "test->test;compile->compile", akkautil)
@@ -389,7 +390,8 @@ lazy val backsplashExport = Project("backsplash-export", file("backsplash-export
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4"),
     addCompilerPlugin(
-      "org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+      "org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+    assemblyJarName in assembly := "backsplash-export-assembly.jar"
   )
 
 lazy val backsplashServer = Project("backsplash-server",
