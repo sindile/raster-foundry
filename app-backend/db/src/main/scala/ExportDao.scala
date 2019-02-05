@@ -3,11 +3,15 @@ package com.rasterfoundry.database
 import com.rasterfoundry.common.ast.codec.MapAlgebraCodec._
 import com.rasterfoundry.common.ast.MapAlgebraAST._
 import com.rasterfoundry.common.ast._
-
-import cats.implicits._
 import com.rasterfoundry.common.datamodel._
+import com.rasterfoundry.common.datamodel.export._
 import com.rasterfoundry.database.Implicits._
 import com.rasterfoundry.database.util._
+
+import cats._
+import cats.implicits._
+import _root_.io.circe._
+import _root_.io.circe.syntax._
 import doobie._
 import doobie.implicits._
 import doobie.postgres._
@@ -79,8 +83,9 @@ object ExportDao extends Dao[Export] {
       .option
   }
 
-  def getExportDefinition(export: Export,
-                          user: User): ConnectionIO[ExportDefinition] = {
+  def getExportDefinition[Source: Encoder: Decoder](
+      export: Export,
+      user: User): ConnectionIO[ExportDefinition[Source]] = {
     val exportOptions = export.exportOptions.as[ExportOptions] match {
       case Left(e) =>
         throw new Exception(
@@ -92,31 +97,25 @@ object ExportDao extends Dao[Export] {
 
     val outputDefinition: ConnectionIO[OutputDefinition] = for {
       user <- UserDao.getUserById(export.owner)
-      dbxToken <- user.dropboxCredential.token
     } yield {
       OutputDefinition(
         crs = exportOptions.getCrs,
-        rasterSize = exportOptions.rasterSize,
-        render = Some(exportOptions.render),
-        crop = exportOptions.crop,
-        source = exportOptions.source,
-        dropboxCredential = dbxToken
+        destination = exportOptions.source.toString,
+        dropboxCredential = user.flatMap(_.dropboxCredential.token)
       )
     }
 
-    val exportInput: ConnectionIO[InputStyle] = {
+    val exportSource: ConnectionIO[Source] = {
 
       logger.info(s"Project id when getting input style: ${export.projectId}")
       logger.info(s"Tool run id when getting input style: ${export.toolRunId}")
       (export.projectId, export.toolRunId) match {
         // Exporting a tool-run
         case (_, Some(toolRunId)) =>
-          astInput(toolRunId) map { ASTInput.asInputStyle(_) }
+          astInput(toolRunId, exportOptions)
         // Exporting a project
         case (Some(projectId), None) =>
-          simpleInput(projectId, exportOptions) map {
-            SimpleInput.asInputStyle(_)
-          }
+          simpleInput(projectId, exportOptions)
         case (None, None) =>
           throw new Exception(
             s"Export Definitions ${export.id} does not have project or ast input defined")
@@ -125,19 +124,15 @@ object ExportDao extends Dao[Export] {
 
     for {
       _ <- logger.info("Creating output definition").pure[ConnectionIO]
-      outDef <- outputDefinition
+      outputDef <- outputDefinition
       _ <- logger
-        .info(s"Created output definition for ${outDef.source}")
+        .info(s"Created output definition for ${outputDef.destination}")
         .pure[ConnectionIO]
       _ <- logger.info(s"Creating input definition").pure[ConnectionIO]
-      inputDefinition <- exportInput map { inputStyle =>
-        {
-          InputDefinition(exportOptions.resolution, inputStyle)
-        }
-      }
+      sourceDef <- exportSource
       _ <- logger.info("Created input definition").pure[ConnectionIO]
     } yield {
-      ExportDefinition(export.id, inputDefinition, outDef)
+      ExportDefinition(export.id, sourceDef, outputDef)
     }
   }
 
@@ -147,7 +142,11 @@ object ExportDao extends Dao[Export] {
     * happen at the same time, and there's nothing illegal about this, we just
     * need to make sure to include all the ingest locations.
     */
-  private def astInput(toolRunId: UUID): ConnectionIO[ASTInput] = {
+  private def astInput(
+      toolRunId: UUID,
+      exportOptions: ExportOptions
+  ): ConnectionIO[AnalysisExportSource] = {
+    val ndOverride = ???
     for {
       toolRun <- ToolRunDao.query.filter(toolRunId).select
       _ <- logger.debug("Got tool run").pure[ConnectionIO]
@@ -165,16 +164,37 @@ object ExportDao extends Dao[Export] {
         .debug("Found ingest locations for projects")
         .pure[ConnectionIO]
     } yield {
-      ASTInput(ast, sceneLocs, projectLocs)
+      //ASTInput(ast, sceneLocs, projectLocs)
+      val ast2 = ???
+      val params = ???
+      AnalysisExportSource(
+        exportOptions.resolution,
+        exportOptions.mask.get.geom,
+        ast2,
+        params //String -> List[(location, band, ndOverride)]
+      )
     }
   }
 
   private def simpleInput(
       projectId: UUID,
       exportOptions: ExportOptions
-  ): ConnectionIO[SimpleInput] = {
+  ): ConnectionIO[MosaicExportSource] = {
     SceneToProjectDao.getMosaicDefinition(projectId).compile.toList map { mds =>
-      SimpleInput(mds.toArray, exportOptions.mask.map(_.geom))
+      // we definitely need NoData but it isn't obviously available :(
+      val ndOverride: Option[Double] = ???
+      val layers = mds.collect {
+        case md =>
+          (md.ingestLocation, exportOptions.bands).mapN {
+            case (ingestLocation, bands) =>
+              (ingestLocation, bands.toList, ndOverride)
+          }
+      }.flatten
+      MosaicExportSource(
+        exportOptions.resolution,
+        exportOptions.mask.get.geom,
+        layers
+      )
     }
   }
 
@@ -196,7 +216,7 @@ object ExportDao extends Dao[Export] {
     */
   private def sceneIngestLocs(
       ast: MapAlgebraAST
-  ): ConnectionIO[Map[UUID, String]] = {
+  ): ConnectionIO[Map[String, String]] = {
 
     val sceneIds: Set[UUID] = ast.tileSources.flatMap {
       case s: SceneRaster => Some(s.sceneId)
@@ -215,7 +235,7 @@ object ExportDao extends Dao[Export] {
       }
     } yield {
       scenes.flatMap { scene =>
-        scene.ingestLocation.map((scene.id, _))
+        scene.ingestLocation.map((scene.id.toString, _))
       }.toMap
     }
   }

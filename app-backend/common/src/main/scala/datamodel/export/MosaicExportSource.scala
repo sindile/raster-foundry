@@ -1,13 +1,14 @@
 package com.rasterfoundry.common.datamodel.export
 
-import geotrellis.vector.Polygon
+import com.rasterfoundry.common._
+import geotrellis.vector.MultiPolygon
 import _root_.io.circe._
 import _root_.io.circe.generic.semiauto._
 
 // layers includes tuples of the URL/URI of a cog + the list of bands to use
 case class MosaicExportSource(
     zoom: Int,
-    area: Polygon,
+    area: MultiPolygon,
     layers: List[(String, List[Int], Option[Double])]
 )
 

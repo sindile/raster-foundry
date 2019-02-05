@@ -15,18 +15,18 @@ import java.net.{URI, URLDecoder}
   * @param source output source [[URI]]
   * @param dropboxCredential dropbox token
   */
-@JsonCodec
-final case class OutputDefinition(
-    crs: Option[CRS],
-    rasterSize: Option[Int],
-    render: Option[Render],
-    crop: Boolean,
-    source: URI,
-    dropboxCredential: Option[String]
-) {
-  def getURLDecodedSource: String =
-    URLDecoder
-      .decode(source.toString, "UTF-8")
-      .replace("dropbox:///", "/")
-      .replace("file:///", "/")
-}
+//@JsonCodec
+//final case class OutputDefinition(
+//    crs: Option[CRS],
+//    rasterSize: Option[Int],
+//    render: Option[Render],
+//    crop: Boolean,
+//    source: URI,
+//    dropboxCredential: Option[String]
+//) {
+//  def getURLDecodedSource: String =
+//    URLDecoder
+//      .decode(source.toString, "UTF-8")
+//      .replace("dropbox:///", "/")
+//      .replace("file:///", "/")
+//}

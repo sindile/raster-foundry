@@ -1,9 +1,7 @@
-package com.rasterfoundry.backsplash.server
+package com.rasterfoundry.database.util
 
 import com.rasterfoundry.database.SceneToProjectDao
 import com.rasterfoundry.common.ast.{MapAlgebraAST, NodeMetadata}
-import com.rasterfoundry.backsplash._
-import com.rasterfoundry.backsplash.error._
 import com.rasterfoundry.database.util.RFTransactor
 
 import com.azavea.maml.ast._
@@ -14,13 +12,9 @@ import cats.effect.IO
 import cats.implicits._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
-import io.circe.Json
+import _root_.io.circe.Json
 
-class BacksplashMamlAdapter[HistStore: HistogramStore](
-    mosaicImplicits: MosaicImplicits[HistStore],
-    xa: Transactor[IO])
-    extends ProjectStoreImplicits(xa) {
-  import mosaicImplicits._
+class BacksplashMamlAdapter(xa: Transactor[IO]) {
 
   def asMaml(ast: MapAlgebraAST)
     : (Expression, Option[NodeMetadata], Map[String, BacksplashMosaic]) = {
@@ -30,9 +24,9 @@ class BacksplashMamlAdapter[HistStore: HistogramStore](
 
       ast match {
         case MapAlgebraAST.ProjectRaster(_, projId, band, celltype, _) => {
-          val bandActual = band.getOrElse(
-            throw SingleBandOptionsException(
-              "Band must be provided to evaluate AST"))
+          val bandActual = band.getOrElse {
+            throw new Exception("Band must be provided to evaluate AST")
+          }
           // This is silly - mostly making up single band options here when all we really need is the band number
           Map[String, BacksplashMosaic](
             s"${projId.toString}_${bandActual}" -> (
@@ -68,10 +62,10 @@ class BacksplashMamlAdapter[HistStore: HistogramStore](
         case MapAlgebraAST.SceneRaster(_, _, _, _, _)  => ???
         case MapAlgebraAST.Constant(_, const, _)       => DblLit(const)
         case MapAlgebraAST.LiteralTile(_, lt, _) =>
-          throw MetadataException(
+          throw new Exception(
             "No literal tiles should appear on pre-MAML RFML tools")
         case MapAlgebraAST.ToolReference(_, _) =>
-          throw MetadataException("Tool references not yet supported via MAML")
+          throw new Exception("Tool references not yet supported via MAML")
         /* --- LOCAL OPERATIONS --- */
         case MapAlgebraAST.Addition(_, _, _)       => Addition(args)
         case MapAlgebraAST.Subtraction(_, _, _)    => Subtraction(args)

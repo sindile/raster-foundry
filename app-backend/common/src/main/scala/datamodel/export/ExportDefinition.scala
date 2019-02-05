@@ -1,7 +1,7 @@
 package com.rasterfoundry.common.datamodel.export
 
 import com.azavea.maml.ast._
-import geotrellis.vector.Extent
+import geotrellis.vector._
 import geotrellis.proj4.WebMercator
 import geotrellis.raster._
 import _root_.io.circe._
@@ -12,14 +12,21 @@ import cats.implicits._
 
 import java.util.UUID
 
-case class ExportDefinition[SourceDefinition: Decoder](
+case class ExportDefinition[SourceDefinition: Encoder: Decoder](
     id: UUID,
     source: SourceDefinition,
     output: OutputDefinition
 )
 
 object ExportDefinition {
-  implicit def encodeFoo[SourceDefinition: Encoder]
+
+  //def fromExport[Source: Encoder: Decoder](export: Export): Option[ExportDefinition[Source]] =
+  //  (export.projectId, export.toolRunId) match {
+  //    case (Some(projId), _) => ???
+  //    case (_, Some(toolId)) => ???
+  //  }
+
+  implicit def encodeFoo[SourceDefinition: Encoder: Decoder]
     : Encoder[ExportDefinition[SourceDefinition]] =
     new Encoder[ExportDefinition[SourceDefinition]] {
       final def apply(exportDef: ExportDefinition[SourceDefinition]): Json =
@@ -30,7 +37,7 @@ object ExportDefinition {
         )
     }
 
-  implicit def decodeExportDefinition[SourceDefinition: Decoder]
+  implicit def decodeExportDefinition[SourceDefinition: Encoder: Decoder]
     : Decoder[ExportDefinition[SourceDefinition]] =
     new Decoder[ExportDefinition[SourceDefinition]] {
       final def apply(
@@ -53,7 +60,7 @@ object ExportDefinition {
   def mockMosaic = {
     val source = MosaicExportSource(
       1,
-      Extent(0, 0, 1, 1).toPolygon,
+      MultiPolygon(Extent(0, 0, 1, 1).toPolygon),
       List(
         ("file:///tmp/test/source1.tif", List(1, 2), Some(0)),
         ("file:///tmp/test/source2.tif", List(2, 3), Some(0)),
@@ -72,7 +79,7 @@ object ExportDefinition {
       )
     val source = AnalysisExportSource(
       1,
-      Extent(0, 0, 1, 1).toPolygon,
+      MultiPolygon(Extent(0, 0, 1, 1).toPolygon),
       Addition(List(RasterVar("mockAST1"), RasterVar("mockAST2"))),
       Map(
         "mockAST1" -> List(("file:///tmp/test/source1.tif", 1, Some(0)),

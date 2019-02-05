@@ -10,7 +10,7 @@ import io.circe.generic.JsonCodec
   * @param input [[InputDefinition]] with information about input data for an export job
   * @param output [[OutputDefinition]] with information about output data for an export job
   */
-@JsonCodec
-final case class ExportDefinition(id: UUID,
-                                  input: InputDefinition,
-                                  output: OutputDefinition)
+//@JsonCodec
+//final case class ExportDefinition(id: UUID,
+//                                  input: InputDefinition,
+//                                  output: OutputDefinition)
