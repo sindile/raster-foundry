@@ -63,8 +63,7 @@ package object export extends LazyLogging {
       GDALRasterSource(
         URLDecoder.decode(uri, StandardCharsets.UTF_8.toString()))
     } else {
-      new GeoTiffRasterSource(
-        URLDecoder.decode(uri, StandardCharsets.UTF_8.toString()))
+      new GeoTiffRasterSource(uri)
     }
   }
 }
