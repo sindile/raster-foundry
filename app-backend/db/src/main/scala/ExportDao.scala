@@ -115,7 +115,7 @@ object ExportDao extends Dao[Export] {
           astInput(toolRunId, exportOptions).widen
         // Exporting a project
         case (Some(projectId), None) =>
-          simpleInput(projectId, exportOptions).widen
+          mosaicInput(projectId, exportOptions).widen
         case (None, None) =>
           throw new Exception(
             s"Export Definitions ${export.id} does not have project or ast input defined")
@@ -161,7 +161,6 @@ object ExportDao extends Dao[Export] {
         .debug("Found ingest locations for projects")
         .pure[ConnectionIO]
     } yield {
-      //val (ast, params) = mamladapterguy(oldform)
       val mamlExpression = MamlConversion.fromDeprecatedAST(oldAST)
       AnalysisExportSource(
         exportOptions.resolution,
@@ -172,7 +171,7 @@ object ExportDao extends Dao[Export] {
     }
   }
 
-  private def simpleInput(
+  private def mosaicInput(
       projectId: UUID,
       exportOptions: ExportOptions
   ): ConnectionIO[MosaicExportSource] = {
@@ -249,7 +248,7 @@ object ExportDao extends Dao[Export] {
             None
           } else {
             Some(
-              pID.toString ->
+              s"${pID}_${projToIngestLoc(pID)._2}" ->
                 loc.map({
                   (_, projToIngestLoc(pID)._2, projToIngestLoc(pID)._3)
                 }))
