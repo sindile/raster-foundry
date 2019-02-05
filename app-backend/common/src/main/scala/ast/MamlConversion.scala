@@ -1,7 +1,5 @@
 package com.rasterfoundry.common.ast
 
-import com.rasterfoundry.common.ast.{MapAlgebraAST, NodeMetadata}
-
 import com.azavea.maml.ast._
 import com.azavea.maml.util.{NeighborhoodConversion, ClassMap => MamlClassMap}
 import geotrellis.vector.io._
