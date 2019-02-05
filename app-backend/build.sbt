@@ -267,7 +267,7 @@ lazy val migrations = Project("migrations", file("migrations"))
 
 
 lazy val batch = Project("batch", file("batch"))
-  .dependsOn(common, geotrellis)
+  .dependsOn(common, backsplashCore, geotrellis)
   .settings(commonSettings: _*)
   .settings(resolvers += Resolver.bintrayRepo("azavea", "maven"))
   .settings(resolvers += Resolver.bintrayRepo("azavea", "geotrellis"))

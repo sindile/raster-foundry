@@ -8,6 +8,7 @@ import com.rasterfoundry.common.datamodel.export._
 import com.rasterfoundry.database.Implicits._
 import com.rasterfoundry.database.util._
 
+import geotrellis.raster._
 import cats._
 import cats.implicits._
 import _root_.io.circe._
@@ -83,9 +84,8 @@ object ExportDao extends Dao[Export] {
       .option
   }
 
-  def getExportDefinition[Source: Encoder: Decoder](
-      export: Export,
-      user: User): ConnectionIO[ExportDefinition[Source]] = {
+  def getExportDefinition(export: Export,
+                          user: User): ConnectionIO[ExportDefinition] = {
     val exportOptions = export.exportOptions.as[ExportOptions] match {
       case Left(e) =>
         throw new Exception(
@@ -105,17 +105,17 @@ object ExportDao extends Dao[Export] {
       )
     }
 
-    val exportSource: ConnectionIO[Source] = {
+    val exportSource: ConnectionIO[ExportSource] = {
 
       logger.info(s"Project id when getting input style: ${export.projectId}")
       logger.info(s"Tool run id when getting input style: ${export.toolRunId}")
       (export.projectId, export.toolRunId) match {
         // Exporting a tool-run
         case (_, Some(toolRunId)) =>
-          astInput(toolRunId, exportOptions)
+          astInput(toolRunId, exportOptions).widen
         // Exporting a project
         case (Some(projectId), None) =>
-          simpleInput(projectId, exportOptions)
+          simpleInput(projectId, exportOptions).widen
         case (None, None) =>
           throw new Exception(
             s"Export Definitions ${export.id} does not have project or ast input defined")
@@ -146,32 +146,28 @@ object ExportDao extends Dao[Export] {
       toolRunId: UUID,
       exportOptions: ExportOptions
   ): ConnectionIO[AnalysisExportSource] = {
-    val ndOverride = ???
     for {
       toolRun <- ToolRunDao.query.filter(toolRunId).select
       _ <- logger.debug("Got tool run").pure[ConnectionIO]
-      ast <- {
+      oldAST <- {
         toolRun.executionParameters.as[MapAlgebraAST] match {
+          case Right(mapAlgebraAST) => mapAlgebraAST
           case Left(e)              => throw e
-          case Right(mapAlgebraAST) => stripMetadata(mapAlgebraAST)
         }
       }.pure[ConnectionIO]
       _ <- logger.debug("Fetched ast").pure[ConnectionIO]
-      sceneLocs <- sceneIngestLocs(ast)
-      _ <- logger.debug("Found ingest locations for scenes").pure[ConnectionIO]
-      projectLocs <- projectIngestLocs(ast)
+      projectLocs <- projectIngestLocs(oldAST)
       _ <- logger
         .debug("Found ingest locations for projects")
         .pure[ConnectionIO]
     } yield {
-      //ASTInput(ast, sceneLocs, projectLocs)
-      val ast2 = ???
-      val params = ???
+      //val (ast, params) = mamladapterguy(oldform)
+      val mamlExpression = MamlConversion.fromDeprecatedAST(oldAST)
       AnalysisExportSource(
         exportOptions.resolution,
         exportOptions.mask.get.geom,
-        ast2,
-        params //String -> List[(location, band, ndOverride)]
+        mamlExpression,
+        projectLocs
       )
     }
   }
@@ -206,48 +202,29 @@ object ExportDao extends Dao[Export] {
       ast.withMetadata(NodeMetadata()).withArgs(args)
   }
 
-  /** Obtain the ingest locations for all Scenes and Projects which are
-    * referenced in the given [[EvalParams]]. If even a single Scene anywhere is
-    * found to have no `ingestLocation` value, the entire operation fails.
-    *
-    * @note Scenes are represented with a map from scene ID to ingest location.
-    * @note Projects are represented with a map from project ID to a map from scene ID to
-    *       ingest location
-    */
-  private def sceneIngestLocs(
-      ast: MapAlgebraAST
-  ): ConnectionIO[Map[String, String]] = {
-
-    val sceneIds: Set[UUID] = ast.tileSources.flatMap {
-      case s: SceneRaster => Some(s.sceneId)
-      case _              => None
-    }
-
-    logger.debug(s"Working with this many scenes: ${sceneIds.size}")
-
-    for {
-      scenes <- sceneIds.toList.toNel match {
-        case Some(ids) =>
-          SceneDao.query
-            .filter(sceneIds.toList.toNel.map(ids => Fragments.in(fr"id", ids)))
-            .list
-        case _ => List.empty[Scene].pure[ConnectionIO]
-      }
-    } yield {
-      scenes.flatMap { scene =>
-        scene.ingestLocation.map((scene.id.toString, _))
+  // Returns ID as string and a list of location/band/ndoverride
+  private def projectIngestLocs(ast: MapAlgebraAST)
+    : ConnectionIO[Map[String, List[(String, Int, Option[Double])]]] = {
+    val projToIngestLoc: Map[UUID, (UUID, Int, Option[Double])] =
+      ast.tileSources.flatMap {
+        case s: ProjectRaster =>
+          val projectId = s.projId
+          val nodeId = s.id
+          val band = s.band.getOrElse(1)
+          val ndOverride = s.celltype.flatMap {
+            case hnd: HasNoData[Byte]   => Some(hnd.widenedNoData.asDouble)
+            case hnd: HasNoData[Short]  => Some(hnd.widenedNoData.asDouble)
+            case hnd: HasNoData[Int]    => Some(hnd.widenedNoData.asDouble)
+            case hnd: HasNoData[Float]  => Some(hnd.widenedNoData.asDouble)
+            case hnd: HasNoData[Double] => Some(hnd.widenedNoData.asDouble)
+            case nnd: NoNoData          => None
+          }
+          Some(projectId -> (nodeId, band, ndOverride))
+        case _ =>
+          None
       }.toMap
-    }
-  }
 
-  private def projectIngestLocs(
-      ast: MapAlgebraAST): ConnectionIO[Map[UUID, List[(UUID, String)]]] = {
-    val projectIds: Set[UUID] = ast.tileSources.flatMap {
-      case s: ProjectRaster => Some(s.projId)
-      case _                => None
-    }
-
-    logger.debug(s"Working with this many projects: ${projectIds.size}")
+    logger.debug(s"Working with this many projects: ${projToIngestLoc.size}")
 
     val sceneProjectSelect = fr"""
     SELECT stp.project_id, array_agg(stp.scene_id), array_agg(scenes.ingest_location)
@@ -258,7 +235,8 @@ object ExportDao extends Dao[Export] {
     ON
       stp.scene_id = scenes.id
     """ ++ Fragments.whereAndOpt(
-      projectIds.toList.toNel.map(ids => Fragments.in(fr"stp.project_id", ids))
+      projToIngestLoc.keys.toList.toNel.map(ids =>
+        Fragments.in(fr"stp.project_id", ids))
     ) ++ fr"GROUP BY stp.project_id"
     val projectSceneLocs = for {
       stps <- sceneProjectSelect
@@ -270,7 +248,11 @@ object ExportDao extends Dao[Export] {
           if (loc.isEmpty) {
             None
           } else {
-            Some((pID, sID zip loc))
+            Some(
+              pID.toString ->
+                loc.map({
+                  (_, projToIngestLoc(pID)._2, projToIngestLoc(pID)._3)
+                }))
           }
       }.toMap
     }

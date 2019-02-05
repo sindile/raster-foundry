@@ -12,44 +12,40 @@ import cats.implicits._
 
 import java.util.UUID
 
-case class ExportDefinition[SourceDefinition: Encoder: Decoder](
+case class ExportDefinition(
     id: UUID,
-    source: SourceDefinition,
+    source: ExportSource,
     output: OutputDefinition
 )
 
 object ExportDefinition {
+  implicit val encoder = deriveEncoder[ExportDefinition]
+  implicit val decoder = deriveDecoder[ExportDefinition]
 
-  //def fromExport[Source: Encoder: Decoder](export: Export): Option[ExportDefinition[Source]] =
-  //  (export.projectId, export.toolRunId) match {
-  //    case (Some(projId), _) => ???
-  //    case (_, Some(toolId)) => ???
+  //implicit def encodeExportDefinition[SourceDefinition: Encoder: Decoder]
+  //  : Encoder[ExportDefinition[SourceDefinition]] =
+  //  new Encoder[ExportDefinition[SourceDefinition]] {
+  //    final def apply(exportDef: ExportDefinition[SourceDefinition]): Json =
+  //      Json.obj(
+  //        ("id", exportDef.id.asJson),
+  //        ("src", exportDef.source.asJson),
+  //        ("output", exportDef.output.asJson)
+  //      )
   //  }
 
-  implicit def encodeFoo[SourceDefinition: Encoder: Decoder]
-    : Encoder[ExportDefinition[SourceDefinition]] =
-    new Encoder[ExportDefinition[SourceDefinition]] {
-      final def apply(exportDef: ExportDefinition[SourceDefinition]): Json =
-        Json.obj(
-          ("id", exportDef.id.asJson),
-          ("src", exportDef.source.asJson),
-          ("output", exportDef.output.asJson)
-        )
-    }
-
-  implicit def decodeExportDefinition[SourceDefinition: Encoder: Decoder]
-    : Decoder[ExportDefinition[SourceDefinition]] =
-    new Decoder[ExportDefinition[SourceDefinition]] {
-      final def apply(
-          c: HCursor): Decoder.Result[ExportDefinition[SourceDefinition]] =
-        for {
-          id <- c.downField("id").as[UUID]
-          src <- c.downField("src").as[SourceDefinition]
-          out <- c.downField("output").as[OutputDefinition]
-        } yield {
-          ExportDefinition[SourceDefinition](id, src, out)
-        }
-    }
+  //implicit def decodeExportDefinition[SourceDefinition: Encoder: Decoder]
+  //  : Decoder[ExportDefinition[SourceDefinition]] =
+  //  new Decoder[ExportDefinition[SourceDefinition]] {
+  //    final def apply(
+  //        c: HCursor): Decoder.Result[ExportDefinition[SourceDefinition]] =
+  //      for {
+  //        id <- c.downField("id").as[UUID]
+  //        src <- c.downField("src").as[SourceDefinition]
+  //        out <- c.downField("output").as[OutputDefinition]
+  //      } yield {
+  //        ExportDefinition[SourceDefinition](id, src, out)
+  //      }
+  //  }
 
   private val outputDefinition =
     OutputDefinition(

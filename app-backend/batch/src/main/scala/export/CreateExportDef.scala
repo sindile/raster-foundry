@@ -9,6 +9,7 @@ import com.rasterfoundry.database.Implicits._
 import com.rasterfoundry.database.util.RFTransactor
 import com.rasterfoundry.database.{ExportDao, UserDao}
 import com.rasterfoundry.common.datamodel._
+import com.rasterfoundry.common.datamodel.export._
 
 import cats.effect.IO
 import cats.implicits._

@@ -1,8 +1,6 @@
-package com.rasterfoundry.database.util
+package com.rasterfoundry.common.ast
 
-import com.rasterfoundry.database.SceneToProjectDao
 import com.rasterfoundry.common.ast.{MapAlgebraAST, NodeMetadata}
-import com.rasterfoundry.database.util.RFTransactor
 
 import com.azavea.maml.ast._
 import com.azavea.maml.util.{NeighborhoodConversion, ClassMap => MamlClassMap}
@@ -10,42 +8,10 @@ import geotrellis.vector.io._
 import cats._
 import cats.effect.IO
 import cats.implicits._
-import doobie.implicits._
-import doobie.util.transactor.Transactor
-import _root_.io.circe.Json
+import io.circe.Json
 
-class BacksplashMamlAdapter(xa: Transactor[IO]) {
-
-  def asMaml(ast: MapAlgebraAST)
-    : (Expression, Option[NodeMetadata], Map[String, BacksplashMosaic]) = {
-
-    def evalParams(ast: MapAlgebraAST): Map[String, BacksplashMosaic] = {
-      val args = ast.args.map(evalParams)
-
-      ast match {
-        case MapAlgebraAST.ProjectRaster(_, projId, band, celltype, _) => {
-          val bandActual = band.getOrElse {
-            throw new Exception("Band must be provided to evaluate AST")
-          }
-          // This is silly - mostly making up single band options here when all we really need is the band number
-          Map[String, BacksplashMosaic](
-            s"${projId.toString}_${bandActual}" -> (
-              SceneToProjectDao()
-                .read(
-                  projId,
-                  None,
-                  None,
-                  None
-                ) map { backsplashIm =>
-                backsplashIm.copy(subsetBands = List(bandActual))
-              }
-            )
-          )
-        }
-        case _ =>
-          args.foldLeft(Map.empty[String, BacksplashMosaic])((a, b) => a ++ b)
-      }
-    }
+object MamlConversion {
+  def fromDeprecatedAST(ast: MapAlgebraAST): Expression = {
 
     def eval(ast: MapAlgebraAST): Expression = {
 
@@ -130,6 +96,6 @@ class BacksplashMamlAdapter(xa: Transactor[IO]) {
       }
     }
 
-    (eval(ast), ast.metadata, evalParams(ast))
+    eval(ast)
   }
 }

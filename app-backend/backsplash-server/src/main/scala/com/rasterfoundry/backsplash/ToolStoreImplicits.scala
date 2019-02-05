@@ -4,6 +4,7 @@ import com.rasterfoundry.backsplash._
 import com.rasterfoundry.backsplash.ProjectStore.ToProjectStoreOps
 import com.rasterfoundry.backsplash.color._
 import com.rasterfoundry.backsplash.error._
+import com.rasterfoundry.database.SceneToProjectDao
 import com.rasterfoundry.database.Implicits._
 import com.rasterfoundry.database.ToolRunDao
 import com.rasterfoundry.database.util.RFTransactor
@@ -26,7 +27,8 @@ class ToolStoreImplicits[HistStore: HistogramStore](
   import mosaicImplicits._
   implicit val tmsReification = rawMosaicTmsReification
 
-  val mamlAdapter = new BacksplashMamlAdapter(mosaicImplicits, xa)
+  val mamlAdapter =
+    new BacksplashMamlAdapter(mosaicImplicits, SceneToProjectDao())
 
   private def toolToColorRd(toolRd: RenderDefinition): RenderDefinition = {
     val scaleOpt = toolRd.scale match {
