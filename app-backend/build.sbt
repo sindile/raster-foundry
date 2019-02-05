@@ -378,6 +378,7 @@ lazy val backsplashExport = Project("backsplash-export", file("backsplash-export
       "com.azavea" %% "geotrellis-server-core" % Version.geotrellisServer,
       "org.scalacheck" %% "scalacheck" % Version.scalaCheck,
       "org.apache.spark" %% "spark-core" % "2.4.0" % Provided,
+      Dependencies.commonsIO,
       Dependencies.decline,
       Dependencies.geotrellisS3,
       Dependencies.geotrellisUtil,

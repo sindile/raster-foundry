@@ -8,6 +8,11 @@ import cats.effect._
 import _root_.io.circe.{Decoder, DecodingFailure, Encoder, HCursor, Json}
 import shapeless.{:+:, CNil, Coproduct, Inl, Inr}
 
+/** Necessary for evaluating the coproduct of exportable instances (allowing any type
+ *  which implements the appropriate methods to count as, in some sense, defining an
+ *  import. Inspired by this implementation:
+ *  https://github.com/circe/circe/blob/backport/0.9.3/modules/shapes/src/main/scala/io/circe/shapes/CoproductInstances.scala
+ */
 trait CoproductInstances {
   implicit final val exportableCNil: Exportable[CNil] = new Exportable[CNil] {
     def keyedTileSegments(

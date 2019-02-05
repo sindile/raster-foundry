@@ -8,11 +8,11 @@ import scala.io.Source
 import java.io.{BufferedReader, InputStreamReader}
 import java.util.stream.Collectors
 
-object UriHandler {
+object UriReader {
 
   private lazy val s3client = AmazonS3ClientBuilder.defaultClient()
 
-  def handle(uri: URI): String = uri.getScheme match {
+  def read(uri: URI): String = uri.getScheme match {
     case "http" | "https" =>
       Http(uri.toString).method("GET").asString.body
     case "file" =>
@@ -30,5 +30,4 @@ object UriHandler {
       throw new Exception(
         "A valid URI is required if you want to export data...")
   }
-
 }

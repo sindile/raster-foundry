@@ -12,6 +12,7 @@ import cats.implicits._
 
 import java.util.UUID
 
+// The information necessary to export a tif
 case class ExportDefinition[SourceDefinition: Encoder: Decoder](
     id: UUID,
     source: SourceDefinition,

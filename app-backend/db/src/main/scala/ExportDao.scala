@@ -9,6 +9,8 @@ import com.rasterfoundry.database.Implicits._
 import com.rasterfoundry.database.util._
 
 import geotrellis.raster._
+import geotrellis.vector.reproject.Implicits._
+import geotrellis.proj4._
 import cats._
 import cats.implicits._
 import _root_.io.circe._
@@ -165,7 +167,7 @@ object ExportDao extends Dao[Export] {
       val mamlExpression = MamlConversion.fromDeprecatedAST(oldAST)
       AnalysisExportSource(
         exportOptions.resolution,
-        exportOptions.mask.get.geom,
+        exportOptions.mask.get.geom.reproject(WebMercator, LatLng),
         mamlExpression,
         projectLocs
       )
@@ -188,7 +190,7 @@ object ExportDao extends Dao[Export] {
       }.flatten
       MosaicExportSource(
         exportOptions.resolution,
-        exportOptions.mask.get.geom,
+        exportOptions.mask.get.geom.reproject(WebMercator, LatLng),
         layers
       )
     }

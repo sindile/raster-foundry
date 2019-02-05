@@ -9,6 +9,9 @@ import simulacrum._
 import cats.effect._
 import java.util.UUID
 
+/**
+  * Allows types to define exp
+  */
 @typeclass trait Exportable[A] {
   @op("keyedTileSegments") def keyedTileSegments(self: A, zoom: Int)(
       implicit cs: ContextShift[IO]): Iterator[((Int, Int), MultibandTile)]

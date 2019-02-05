@@ -4,6 +4,7 @@ import geotrellis.vector.Extent
 import geotrellis.proj4._
 
 object TilesForExtent {
+  // generate a list of tiles that fall under the provided latlng extent
   def latLng(extent: Extent, zoom: Int): List[(Int, Int)] = {
     val blLat = extent.ymax
     val blLng = extent.xmin

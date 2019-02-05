@@ -5,7 +5,7 @@ import geotrellis.vector.Extent
 import geotrellis.proj4._
 
 object ExtentOfTiles {
-  // generate a list of tiles that fall under some non-latlng extent
+  // Find the extent which covers the provided list of tile coordinates at the provided zoom
   def webMercator(tiles: List[(Int, Int)], zoom: Int): Extent = {
     val keyToExtent =
       ZoomedLayoutScheme(WebMercator, 256)
