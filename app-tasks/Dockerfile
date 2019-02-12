@@ -23,4 +23,7 @@ COPY jars/ /opt/raster-foundry/jars/
 
 COPY rf/ /tmp/rf
 COPY completion.bash /tmp/rf/completion.bash
+COPY rf/run.sh /opt/raster-foundry/run.sh
+COPY rf/naip-hro.sh /opt/raster-foundry/naip-hro.sh
 RUN (cat /tmp/rf/completion.bash | tee -a /root/.bashrc && cd /tmp/rf && python setup.py install)
+WORKDIR /opt/raster-foundry/

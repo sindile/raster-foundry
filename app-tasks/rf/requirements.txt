@@ -1,8 +1,7 @@
 numpy==1.14.3
-boto3==1.7.71
 pytest==2.9.2
 pytest-runner==2.9
-rasterio==1.0a8
+rasterio>=1.0.4
 pyproj==1.9.5
 ipython==5.1.0
 pyjwt==1.4.2
@@ -15,3 +14,6 @@ dropbox==9.0.0
 rasterfoundry==0.7.1
 psycopg2-binary==2.7.6
 requests==2.16.2
+rio-cogeo==1.0.dev8
+awscli==1.16.101
+boto3>=1.7.71
