@@ -1,8 +1,7 @@
 #!/bin/bash
 
 set -eu
-IFS=","
-for PARTIAL_PATH in $1
+for PARTIAL_PATH in "$@"
 do
     echo "PROCESSING: ${PARTIAL_PATH}"
     TEMP_DIR="$(mktemp -d)"
