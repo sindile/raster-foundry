@@ -24,8 +24,17 @@ unzip temp.zip
 echo "CREATING TIF: ${JPEG2000_FILE} ${TIF_FILE}"
 gdal_translate ${JPEG2000_FILE} ${TIF_FILE}
 
-echo "CREATING COG $COG_FILE"
-rio cogeo --co BLOCKXSIZE=256 --co BLOCKYSIZE=256 "${TIF_FILE}" "${COG_FILE}"
+
+BANDCOUNT="$(rio info ${JPEG2000_FILE} | perl -wne '/"count": (\d+),/i and print $1')"
+echo "Number of bands: ${BANDCOUNT}"
+
+if [ "${BANDCOUNT}" -gt "3" ]; then
+    echo "CREATING COG $COG_FILE with LZW profile"
+    rio cogeo -p lzw --co BLOCKXSIZE=256 --co BLOCKYSIZE=256 "${TIF_FILE}" "${COG_FILE}"
+else
+    echo "CREATING COG $COG_FILE with JPG profile"
+    rio cogeo --co BLOCKXSIZE=256 --co BLOCKYSIZE=256 "${TIF_FILE}" "${COG_FILE}"
+fi
 
 echo "Uploading ${COG_FILE} => ${S3_UPLOAD_PATH}"
 aws s3 cp "${COG_FILE}" "${S3_UPLOAD_PATH}"
