@@ -118,6 +118,10 @@
               color: $shade-dark;
               background: $off-white;
           }
+
+          .aoi-draw-toolbar {
+            box-shadow: none;
+          }
       }
 
       a.active {
