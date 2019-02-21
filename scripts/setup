@@ -8,19 +8,19 @@ fi
 
 function usage() {
     echo -n \
-         "Usage: $(basename "$0")
+"Usage: $(basename "$0")
+
 Attempts to setup the project's development environment.
 "
 }
 
-if [ "${BASH_SOURCE[0]}" = "${0}" ]
-then
-    if [ "${1:-}" = "--help" ]
-    then
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    if [ "${1:-}" = "--help" ]; then
         usage
     else
-        # Ensure that a directory exists to house AWS profiles.
-        mkdir -p "${HOME}/.aws"
+        # This prevents a container build failure when copying 
+        # the nginx/srv/dist/ directory before it exists.
+        # https://github.com/raster-foundry/raster-foundry/pull/3800
         mkdir -p "nginx/srv/dist/"
 
         vagrant up --provision
