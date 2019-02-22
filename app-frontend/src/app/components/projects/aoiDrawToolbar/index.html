@@ -1,17 +1,31 @@
 <div class="navbar light-navbar" ng-style="$ctrl.eleStyle">
-  <div class="navbar-section">
-    <nav>
-      <a class="btn btn-small btn-transparent aoi-draw-toolbar">
-        <i class="icon-plus"></i> Draw AOI
-      </a>
-    </nav>
+  <div class="navbar-section aoi-draw-toolbar-left" ng-style="$ctrl.leftStyle">
+    <div class="btn btn-small btn-transparent" ng-click="$ctrl.onDrawAoi()">
+      <i class="icon-plus"></i> Draw AOI
+    </div>
+    <div style="flex: 1;"></div>
+    <div class="btn btn-small btn-transparent" uib-dropdown uib-dropdown-toggle>
+      Filter<i class="icon-caret-down"></i>
+      <ul class="dropdown-menu dropdown-menu-light drop-left" uib-dropdown-menu role="menu">
+        <li role="menuitem">
+          <a href class="aoi-draw-toolbar-menu" ng-click="$ctrl.showProjectAois()">Project AOIs</a></li>
+        <li role="menuitem">
+          <a href class="aoi-draw-toolbar-menu" ng-click="$ctrl.showVectorData()">Vector Data</a></li>
+      </ul>
+    </div>
   </div>
-  <div class="navbar-section secondary">
-    <nav>
-      <a class="btn btn-small btn-transparent aoi-draw-toolbar">Cancel</a>
-    </nav>
-    <nav>
-      <a class="btn btn-small btn-transparent aoi-draw-toolbar">Confirm AOI</a>
-    </nav>
+  <div class="navbar-section secondary aoi-draw-toolbar-right">
+    <div class="btn btn-small btn-transparent" ng-click="$ctrl.onCancelDrawAoi()">
+      Cancel
+    </div>
+    <div class="btn btn-small btn-primary" uib-dropdown uib-dropdown-toggle>
+      Confirm<i class="icon-caret-down"></i>
+      <ul class="dropdown-menu dropdown-menu-light drop-left" uib-dropdown-menu role="menu">
+        <li role="menuitem">
+          <a href class="aoi-draw-toolbar-menu" ng-click="$ctrl.onConfirmAOI()">Confirm AOI</a></li>
+        <li role="menuitem">
+          <a href class="aoi-draw-toolbar-menu" ng-click="$ctrl.onConfirmAndSaveAOI()">Confirm AOI and save as shape</a></li>
+      </ul>
+    </div>
   </div>
 </div>

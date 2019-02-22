@@ -11,9 +11,12 @@ class AoiDrawToolbarController {
     }
 
     setComponentStyle() {
+        const height = angular.element(document.querySelector('.navbar'))[0].offsetHeight;
         this.eleStyle = {
-            top: `${-angular.element(document.querySelector('.navbar'))[0].offsetHeight}px`
+            top: `${-height}px`,
+            height: `${height}px`
         };
+        this.leftStyle = {height: `${height}px`};
     }
 }
 
